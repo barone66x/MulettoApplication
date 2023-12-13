@@ -132,7 +132,7 @@ function generateFloors() {
     let x = floor.position.x;
     let z = floor.position.z;
 
-    floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
+    floor.rotation.y = -Three.MathUtils.degToRad(f.rotation);
 
     floor.position.x =
       (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(f.rotation)) -
