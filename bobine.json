@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "floorId": 1,
+    "position": {
+      "x": 4,
+      "y": 4
+    },
+    "diameter": 2,
+    "length" : 3
+  }
+]

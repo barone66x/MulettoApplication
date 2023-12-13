@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "name": "settore 1",
+    "position": {
+      "x": 2,
+      "y": 3
+    },
+    "size": {
+      "x": 5,
+      "y": 3
+    },
+    "rotation": 100
+  },
+  {
+    "id": 2,
+    "name": "settore 2",
+    "position": {
+      "x": 10,
+      "y": 10
+    },
+    "size": {
+      "x": 5,
+      "y": 4
+    },
+    "rotation": 45
+  },
+  {
+    "id": 3,
+    "name": "settore 3",
+    "position": {
+      "x": -5,
+      "y": -6
+    },
+    "size": {
+      "x": 4,
+      "y": 2
+    },
+    "rotation": 270
+  }
+]
