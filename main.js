@@ -17,7 +17,6 @@ const res = {
 };
 
 const scene = new Three.Scene();
-scene.rotation.z = Math.PI;
 scene.background = new Three.Color(0xffffff);
 
 const renderer = new Three.WebGLRenderer();
@@ -127,14 +126,13 @@ function generateFloors() {
 
     let dx = f.size.x / 2;
     let dy = f.size.y / 2;
-    floor.position.x += dx;
+    floor.position.x -= dx;
     floor.position.z += dy;
 
     let x = floor.position.x;
     let z = floor.position.z;
 
-    floor.rotation.y = -Three.MathUtils.degToRad(f.rotation);
-    cyl.rotation.y = -Three.MathUtils.degToRad(f.rotation);
+    floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
     floor.position.x =
       (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(f.rotation)) -
