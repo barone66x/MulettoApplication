@@ -139,9 +139,6 @@ function generateFloors() {
     (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
     f.position.x;
     
-    
-    
-    
     floor.position.z =
     (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
     (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) +
@@ -208,12 +205,28 @@ async function loadFbx(path) {
 
 //#region EventListener
 window.addEventListener("resize", onResize);
+
+window.addEventListener("keydown", (event) => {
+
+  console.log(event.code)
+  switch(event.code) {
+    case "KeyR": {
+      generateBobine(1)
+      break;
+    }
+  }
+
+})
+
 //#endregion
 
 //#region Carica Liste
-async function loadJson(path) {
-  let res;
-  res = (await fetch(path)).json();
+async function loadJson(path, filter, field) {
+  let res = await (await fetch(path)).json();
+  if (filter && field) {
+    res = res.filter(x => x[field] == filter);
+  }
+
   return res;
 }
 //#endregion

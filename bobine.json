@@ -21,10 +21,10 @@
   },
   {
     "id": 3,
-    "floorId": 2,
+    "floorId": 3,
     "position": {
-      "x": 21,
-      "y": 11
+      "x": -8,
+      "y": 3
     },
     "diameter": 3,
     "length": 2
