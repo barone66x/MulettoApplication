@@ -18,6 +18,7 @@ const res = {
 
 const scene = new Three.Scene();
 scene.rotation.z = Math.PI;
+scene.add(new Three.AxesHelper(100));
 scene.background = new Three.Color(0xffffff);
 
 const renderer = new Three.WebGLRenderer();
@@ -51,9 +52,9 @@ const box = new Three.Mesh(
   new Three.MeshBasicMaterial({ color: "#ff0000" })
 );
 box.add(new Three.AxesHelper());
-box.position.y += 1;
+box.position.y -= 1;
 box.position.z = 0;
-box.position.x = 0;
+box.position.x = 10;
 console.log(box);
 scene.add(box);
 scene.add(new Three.AxesHelper());
@@ -108,7 +109,6 @@ function generateFloors() {
     // floor.rotation.x = Math.PI * 2 - Math.PI / 2;
 
     // floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
-    floor.position.y -= 0.01;
 
     // console.log("posizione iniziale");
     // console.log(f.position.x);
@@ -127,26 +127,30 @@ function generateFloors() {
 
     let dx = f.size.x / 2;
     let dy = f.size.y / 2;
+    console.log("Floor position pre");
+    console.log( floor.position.x );
     floor.position.x += dx;
+    console.log("floor position post");
+    console.log( floor.position.x );
     floor.position.z += dy;
 
     let x = floor.position.x;
     let z = floor.position.z;
 
-    floor.rotation.y = -Three.MathUtils.degToRad(f.rotation);
+    floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
     cyl.rotation.y = -Three.MathUtils.degToRad(f.rotation);
 
     floor.position.x =
-      (f.position.x -x  ) * Math.cos(Three.MathUtils.degToRad(f.rotation)) -
-      (f.position.y -z  ) * Math.sin(Three.MathUtils.degToRad(f.rotation)) +
+      (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) -
+      (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
       f.position.x;
 
     console.log("posizione centro post traslazione x");
     console.log(floor.position.x);
 
     floor.position.z =
-      (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(f.rotation)) +
-      (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(f.rotation)) +
+      (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
+      (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) +
       f.position.y;
 
     // scene.add(floor)
