@@ -3,25 +3,25 @@
     "id": 1,
     "name": "settore 1",
     "position": {
-      "x": 2,
-      "y": 3
+      "x": 20,
+      "y": 30
     },
     "size": {
-      "x": 5,
-      "y": 3
+      "x": 30,
+      "y": 30
     },
-    "rotation": 45
+    "rotation": 0
   },
   {
     "id": 2,
     "name": "settore 2",
     "position": {
-      "x": 10,
-      "y": 10
+      "x": -20,
+      "y": 20
     },
     "size": {
-      "x": 5,
-      "y": 4
+      "x": 20,
+      "y": 30
     },
     "rotation": 45
   },
@@ -29,13 +29,13 @@
     "id": 3,
     "name": "settore 3",
     "position": {
-      "x": -5,
-      "y": -6
+      "x": -10,
+      "y": 0
     },
     "size": {
-      "x": 4,
-      "y": 2
+      "x": 40,
+      "y": 20
     },
-    "rotation": 270
+    "rotation": 90
   }
 ]

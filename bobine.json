@@ -3,10 +3,31 @@
     "id": 1,
     "floorId": 1,
     "position": {
-      "x": 4,
-      "y": 4
+      "x": 25,
+      "y": 40
     },
     "diameter": 2,
     "length" : 3
+  },
+  {
+    "id": 2,
+    "floorId": 1,
+    "position": {
+      "x": 8,
+      "y": 3
+    },
+    "diameter": 2,
+    "length" : 5
+  },
+  {
+    "id": 3,
+    "floorId": 2,
+    "position": {
+      "x": 21,
+      "y": 11
+    },
+    "diameter": 3,
+    "length" : 2
   }
+
 ]

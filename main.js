@@ -2,13 +2,15 @@
 import * as Three from "three";
 import "./style.css";
 import { FlyControls } from "three/examples/jsm/controls/FlyControls";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 let path1 = "./floor.json";
 let path2 = "./bobine.json";
 let floors = [];
 let bobine = [];
 floors = await loadJson(path1);
-bobine = await loadJson(path2);
+// bobine = await loadJson(path2);
 
 const res = {
   // imposto risoluzione iniziale
@@ -18,7 +20,8 @@ const res = {
 
 const scene = new Three.Scene();
 scene.background = new Three.Color(0xffffff);
-
+const light = new Three.AmbientLight(0xeeeeee); // soft white light
+scene.add(light);
 const renderer = new Three.WebGLRenderer();
 const clock = new Three.Clock();
 
@@ -53,8 +56,8 @@ box.add(new Three.AxesHelper());
 box.position.y += 1;
 box.position.z = 0;
 box.position.x = 0;
-console.log(box);
-scene.add(box);
+
+// scene.add(box);
 scene.add(new Three.AxesHelper());
 
 //#endregion
@@ -63,7 +66,10 @@ renderer.setSize(res.width, res.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); //Densità pixel
 
 document.body.appendChild(renderer.domElement);
+console.log(scene)
 generateFloors();
+generateBobine();
+
 function animate() {
   // box.rotation.y += 0.01;
 
@@ -89,9 +95,20 @@ function onResize() {
   // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 }
 
-function generateBobine() {
-  bobine.forEach((f) => {
-    const bobina = new Three.Mesh(new Three.BoxGeometry());
+async function generateBobine(idPavimento) {
+  bobine = await loadJson(path2, idPavimento);
+  bobine.forEach(async (f) => {
+    const bobina = await loadFbx("./models/bobina2.fbx");
+    bobina.add(new Three.AxesHelper(50));
+    bobina.scale.set(0.02 * f.diameter, 0.02 * f.length, 0.02 * f.diameter);
+    bobina.rotation.z = Math.PI / 2;
+    bobina.position.y = f.diameter / 2 - 0.1 * f.diameter;
+    bobina.position.x = f.position.x;
+    bobina.position.z = f.position.y;
+    bobina.name = f.id;
+    bobina.floorId = f.floorId;
+    // console.log(bobina);
+    scene.add(bobina);
   });
 }
 
@@ -102,16 +119,12 @@ function generateFloors() {
       new Three.MeshBasicMaterial({ color: "#e897f0" })
     );
 
-    floor.add(new Three.AxesHelper(10));
-
-    // floor.rotation.x = Math.PI * 2 - Math.PI / 2;
-
-    // floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
+    // floor.add(new Three.AxesHelper(10));
     floor.position.y += 0.01;
 
-    // console.log("posizione iniziale");
-    // console.log(f.position.x);
-    // console.log(f.position.y);
+    // floor.idFloor = f.id;
+    floor.name = f.id;
+    // console.log (floor);
 
     let cyl = new Three.Mesh(
       new Three.BoxGeometry(1, 1, 1),
@@ -133,30 +146,49 @@ function generateFloors() {
     let z = floor.position.z;
 
     floor.rotation.y = -Three.MathUtils.degToRad(f.rotation);
+    cyl.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
     floor.position.x =
       (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(f.rotation)) -
       (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(f.rotation)) +
       f.position.x;
 
-    console.log("posizione centro post traslazione x");
-    console.log(floor.position.x);
-
     floor.position.z =
       (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(f.rotation)) +
       (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(f.rotation)) +
       f.position.y;
 
-    // scene.add(floor)
-    // cyl.add(floor);
-    // cyl.rotation.y += Three.MathUtils.degToRad(f.rotation);
-
-    // floor.position.x -= dx * Math.cos(Three.MathUtils.degToRad(f.rotation));
-    // floor.position.z -= dy * Math.sin(Three.MathUtils.degToRad(f.rotation));
-
     scene.add(floor);
     scene.add(cyl);
   });
+}
+
+async function loadFbx(path) {
+  const fbxLoader = new FBXLoader();
+  let x = new Three.Group();
+  x = await fbxLoader.loadAsync(path);
+
+  x.traverse(function (child) {
+    if (child.isMesh) {
+      if (child.material) {
+        child.material.transparent = false;
+      }
+    }
+  });
+
+  let i = 0;
+  while (i < x.children.length) {
+    if (x.children[i].type != "Mesh") {
+      x.children.splice(i, 1);
+      i--;
+    }
+    i++;
+  }
+  x.castShadow = false;
+  x.receiveShadow = false;
+  return x;
+
+  // && !(x.children[i].type == "PointLight")
 }
 
 //#region EventListener
@@ -164,9 +196,13 @@ window.addEventListener("resize", onResize);
 //#endregion
 
 //#region Carica Liste
-async function loadJson(path) {
-  let res;
-  res = (await fetch(path)).json();
+async function loadJson(path, filter, field) {
+  let res = await (await fetch(path)).json();
+  if (filter && field) {
+    console.log("ciao");
+    res = res.filter(x => x == field);
+  }
+
   return res;
 }
 //#endregion
