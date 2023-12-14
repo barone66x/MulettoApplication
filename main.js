@@ -4,10 +4,7 @@ import "./style.css";
 import { FlyControls } from "three/examples/jsm/controls/FlyControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { pointInPolygon } from "detect-collisions"
-
 import * as dc from "detect-collisions"
-
-import { Vector } from "detect-collisions";
 
 class Point {
   x;
@@ -48,7 +45,6 @@ const res = {
 
 const scene = new Three.Scene();
 scene.rotation.z = Math.PI;
-// scene.add(new Three.AxesHelper(100));
 scene.background = new Three.Color(0xffffff);
 scene.add(new Three.AmbientLight());
 
@@ -138,68 +134,45 @@ function onResize() {
 
   currentCamera.aspect = res.width / res.height;
   currentCamera.updateProjectionMatrix(); //Se si modificano queste proprietà della currentCamera bisogna aggiornare la matrice d proiezione
-
-  // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 }
 
 function generateFloors() {
   floors.forEach((f) => {
+
     const floor = new Three.Mesh(
       new Three.BoxGeometry(f.size.x, 0.01, f.size.y),
       new Three.MeshBasicMaterial({ color: "#e897f0" })
     );
 
-    floor.position.x = f.position.x;
-    floor.position.z = f.position.y;
-
-    let dx = f.size.x / 2;
-    let dy = f.size.y / 2;
-
-    floor.position.x += dx;
-
-    floor.position.z += dy;
-
-    // let x = floor.position.x;
-    // let z = floor.position.z;
-
+    floor.position.x = f.position.x + f.size.x / 2;
+    floor.position.z = f.position.y + f.size.y / 2;
+    
     floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
-    // cyl.rotation.y = -Three.MathUtils.degToRad(f.rotation);
 
-    // floor.position.x =
-    //   (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) -
-    //   (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
-    //   f.position.x;
-
-    // floor.position.z =
-    //   (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
-    //   (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) +
-    //   f.position.y;
-    let newCenter = rotateOnAxis(f.position, floor.position.clone(), f.rotation)
-    floor.name = f.id;
+    let newCenter = rotateOnAxis(f.position, new Point(floor.position.x, floor.position.z), f.rotation)
     floor.position.x = newCenter.x;
     floor.position.z = newCenter.y;
+    
+    floor.name = f.id;
+    
     scene.add(floor);
-    // scene.add(cyl);
   });
 }
 
-function rotateOnAxis(centerOfRotation,point,rotationAngle){
-  let x = point.x;
-  let y = point.y;
+function rotateOnAxis(centerOfRotation, point, rotationAngle){
   let newPoint = {};
-  // floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
-  
 
   newPoint.x =
-    (x - centerOfRotation.x) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) -
-    (y - centerOfRotation.y) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
-    centerOfRotation.x;
+  (point.x - centerOfRotation.x) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) -
+  (point.y - centerOfRotation.y) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
+  centerOfRotation.x;
 
-    newPoint.y =
-    (x - centerOfRotation.x) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
-    (y - centerOfRotation.y) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) +
-    centerOfRotation.y;
-    return newPoint;
+  newPoint.y =
+  (point.x - centerOfRotation.x) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
+  (point.y - centerOfRotation.y) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) +
+  centerOfRotation.y;
+
+  return newPoint;
 }
 
 function generateFloorPolygon(floor){
@@ -210,7 +183,6 @@ async function generateBobine(idPavimento) {
   bobine = await loadJson(path2, idPavimento, "floorId");
   bobine.forEach(async (f) => {
     const bobina = await loadFbx("./models/bobina2.fbx");
-    // bobina.add(new Three.AxesHelper(50));
     bobina.scale.set(0.02 * f.diameter, 0.02 * f.length, 0.02 * f.diameter);
     bobina.rotation.z = Math.PI / 2;
     bobina.position.y = -(f.diameter / 2 - 0.1 * f.diameter);
@@ -249,7 +221,6 @@ async function loadFbx(path) {
   x.receiveShadow = false;
   return x;
 
-  // && !(x.children[i].type == "PointLight")
 }
 
 function createButton(left, top, text, func) {
