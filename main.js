@@ -43,7 +43,7 @@ const plane = new Three.Mesh(
   new Three.PlaneGeometry(100, 100),
   new Three.MeshBasicMaterial({ color: "#37c21b" })
 );
-plane.rotation.x = -Math.PI / 2;
+plane.rotation.x = Math.PI / 2;
 scene.add(plane);
 
 const box = new Three.Mesh(
@@ -108,7 +108,7 @@ function generateFloors() {
     // floor.rotation.x = Math.PI * 2 - Math.PI / 2;
 
     // floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
-    floor.position.y += 0.01;
+    floor.position.y -= 0.01;
 
     // console.log("posizione iniziale");
     // console.log(f.position.x);
@@ -137,8 +137,8 @@ function generateFloors() {
     cyl.rotation.y = -Three.MathUtils.degToRad(f.rotation);
 
     floor.position.x =
-      (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(f.rotation)) -
-      (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(f.rotation)) +
+      (f.position.x -x  ) * Math.cos(Three.MathUtils.degToRad(f.rotation)) -
+      (f.position.y -z  ) * Math.sin(Three.MathUtils.degToRad(f.rotation)) +
       f.position.x;
 
     console.log("posizione centro post traslazione x");
