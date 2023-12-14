@@ -12,6 +12,11 @@ let bobine = [];
 floors = await loadJson(path1);
 bobine = await loadJson(path2);
 
+function test() {
+  console.log(path1);
+}
+window.test = test;
+
 const res = {
   // imposto risoluzione iniziale
   width: window.innerWidth,
