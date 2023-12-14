@@ -12,6 +12,8 @@
     "vite": "^5.0.8"
   },
   "dependencies": {
+    "@flatten-js/core": "^1.4.7",
+    "detect-collisions": "^9.2.2",
     "three": "^0.159.0"
   }
 }
