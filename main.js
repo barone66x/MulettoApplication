@@ -146,32 +146,20 @@ function onResize() {
 
   currentCamera.aspect = res.width / res.height;
   currentCamera.updateProjectionMatrix(); //Se si modificano queste proprietà della currentCamera bisogna aggiornare la matrice d proiezione
-
-  // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 }
 
 function generateFloors() {
   floors.forEach((f) => {
+
     const floor = new Three.Mesh(
       new Three.BoxGeometry(f.size.x, 0.01, f.size.y),
       new Three.MeshBasicMaterial({ color: "#e897f0" })
     );
 
-    floor.position.x = f.position.x;
-    floor.position.z = f.position.y;
-
-    let dx = f.size.x / 2;
-    let dy = f.size.y / 2;
-
-    floor.position.x += dx;
-
-    floor.position.z += dy;
-
-    // let x = floor.position.x;
-    // let z = floor.position.z;
-
+    floor.position.x = f.position.x + f.size.x / 2;
+    floor.position.z = f.position.y + f.size.y / 2;
+    
     floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
-    // cyl.rotation.y = -Three.MathUtils.degToRad(f.rotation);
 
     // floor.position.x =
     //   (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) -
@@ -190,10 +178,14 @@ function generateFloors() {
     floor.name = f.id;
     floor.position.x = newCenter.x;
     floor.position.z = newCenter.y;
+    
+    floor.name = f.id;
+    
     scene.add(floor);
 
     generateFloorPolygon(newCenter, f);
     // scene.add(cyl);
+
   });
 }
 async function generateBobine() {
@@ -201,6 +193,7 @@ async function generateBobine() {
   bobine.forEach(async (f) => {
     const bobina = await loadFbx("./models/bobina2.fbx");
     let newCenter = new Point(f.position.x, f.position.y);
+
 
     bobina.scale.set(
       worldScale * f.base,
@@ -249,6 +242,7 @@ function rotateOnAxis(rotationAxis, point, rotationAngle) {
     (x - rotationAxis.x) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
     (y - rotationAxis.y) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) +
     rotationAxis.y;
+
   return newPoint;
 }
 
@@ -283,6 +277,7 @@ function generateFloorPolygon(center, floor) {
   // scene.add(helper);
   // helper.position.set(center.x, 0, center.y)
 }
+
 
 function generateBobinaPolygon(center, bobina) {
   // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
@@ -337,6 +332,7 @@ function floorCollision() {
       trovato = true;
       // const test = new Three.ShapeGeometry(new Three.Shape())
     }
+
   });
 
   if (trovato == true) {
@@ -396,7 +392,6 @@ async function loadFbx(path) {
   x.receiveShadow = false;
   return x;
 
-  // && !(x.children[i].type == "PointLight")
 }
 
 function createButton(left, top, text, func) {
