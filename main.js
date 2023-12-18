@@ -1,18 +1,15 @@
 "use strict";
 import * as Three from "three";
 import "./style.css";
-import { FlyControls } from "three/examples/jsm/controls/FlyControls";
+import { ArcballControls } from "three/examples/jsm/controls/ArcballControls";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
-import { pointInPolygon } from "detect-collisions"
-
-import * as dc from "detect-collisions"
-
-import { Vector } from "detect-collisions";
+import { pointInPolygon } from "detect-collisions";
+import * as dc from "detect-collisions";
 
 class Point {
   x;
   y;
-  constructor (x,y){
+  constructor(x, y) {
     this.x = x;
     this.y = y;
   }
@@ -21,24 +18,21 @@ class Point {
 const inputMovement = {
   movement: 0,
   rotation: 0,
-}
+};
 
 let path1 = "./floor.json";
 let path2 = "./bobine.json";
-let forkliftPath = "./models/Forklift.fbx"
+let forkliftPath = "./models/Forklift.fbx";
 let floors = [];
 let bobine = [];
-let polygons = [];
+let floorPolygons = [];
+let bobinaPolygons = [];
+
 let rotationSpeed = 0.05;
-let translationSpeed = 0.5;
-floors = await loadJson(path1);
-bobine = await loadJson(path2);
+let translationSpeed = 0.25;
+const worldScale = 0.002;
 
-console.log(isInArea("ciao","ciao"))
-
-createButton(10, 10, "Carica Bobina", () => {
-  generateBobine(3);
-});
+const clock = new Three.Clock();
 
 const res = {
   // imposto risoluzione iniziale
@@ -46,29 +40,55 @@ const res = {
   height: window.innerHeight,
 };
 
+const renderer = new Three.WebGLRenderer();
+renderer.setPixelRatio(2);
+renderer.setSize(res.width, res.height);
+
 const scene = new Three.Scene();
 scene.rotation.z = Math.PI;
-// scene.add(new Three.AxesHelper(100));
 scene.background = new Three.Color(0xffffff);
 scene.add(new Three.AmbientLight());
 
-const renderer = new Three.WebGLRenderer();
-const clock = new Three.Clock();
+floors = await loadJson(path1);
+bobine = await loadJson(path2);
 
+let currentArea;
+let currentBobina;
+
+//#region Camere e Control
 const editCamera = new Three.PerspectiveCamera(70, res.width / res.height);
-const forkLiftCamera = new Three.PerspectiveCamera(70, res.width / res.height);
-let currentCamera = forkLiftCamera;
-
 editCamera.position.z -= 8;
-editCamera.position.y += 5;
-
 editCamera.lookAt(0, 0, 0);
 
-const control = new FlyControls(editCamera, renderer.domElement);
+const forkLiftCamera = new Three.PerspectiveCamera(
+  70,
+  res.width / res.height,
+  0.1,
+  5000 / worldScale
+);
 
-control.rollSpeed += 0.6;
-control.movementSpeed += 1.6;
-control.dragToLook = true;
+const control = new ArcballControls(editCamera, renderer.domElement, scene);
+let currentCamera = forkLiftCamera;
+//#endregion
+
+//#region Creazione Bottoni
+createButton(10, 10, "Genera Bobina", () => {
+  // generateBobine(3);
+ 
+});
+createButton(150, 10, "Carica Bobina", () =>{
+
+})
+
+//#endregion
+
+//#region Creazione Label
+createLabel(10, 40, "floorLabel");
+let floorLabel = document.getElementById("floorLabel");
+
+createLabel(10, 80, "bobinaLabel");
+let bobinaLabel = document.getElementById("bobinaLabel");
+//#endregion
 
 //#region Generazione Elementi
 
@@ -91,39 +111,27 @@ scene.add(plane);
 // boxB.int
 // scene.add(box);
 
-
 const forkLift = await loadFbx(forkliftPath);
 scene.add(forkLift);
-forkLift.position.y = -3;
-forkLift.scale.multiplyScalar(0.05);
-forkLift.scale.y *= 2
-
+forkLift.position.y = -22 * (worldScale / 0.02);
+forkLift.scale.multiplyScalar(worldScale);
+forkLift.rotation.z = Math.PI;
+forkLift.add(forkLiftCamera);
 // #endregion
 
-forkLift.add(forkLiftCamera);
-forkLiftCamera.position.y = -2 / forkLift.scale.x;
-forkLiftCamera.position.z = -5 / forkLift.scale.x;
-forkLiftCamera.lookAt(forkLift.position.clone().add(new Three.Vector3(0,10,0)));
-
-renderer.setSize(res.width, res.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); //Densità pixel
+generateFloors();
+generateBobine();
 
 document.body.appendChild(renderer.domElement);
-generateFloors();
-
 
 function animate() {
-  
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
+  forkLift.translateZ(-inputMovement.movement * translationSpeed);
 
-  forkLift.translateZ(inputMovement.movement * translationSpeed);
+  floorCollision();
+  bobinaCollision();
 
-
-  let deltaTime = clock.getDelta();
-  control.update(deltaTime);
-  
   renderer.render(scene, currentCamera);
-
   requestAnimationFrame(animate);
 }
 
@@ -174,60 +182,199 @@ function generateFloors() {
     //   (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
     //   (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) +
     //   f.position.y;
-    let newCenter = rotateOnAxis(f.position, floor.position.clone(), f.rotation)
+    let newCenter = rotateOnAxis(
+      f.position,
+      new Point(floor.position.x, floor.position.z),
+      f.rotation
+    );
     floor.name = f.id;
     floor.position.x = newCenter.x;
     floor.position.z = newCenter.y;
     scene.add(floor);
+
+    generateFloorPolygon(newCenter, f);
     // scene.add(cyl);
   });
 }
+async function generateBobine() {
+  bobine = await loadJson(path2);
+  bobine.forEach(async (f) => {
+    const bobina = await loadFbx("./models/bobina2.fbx");
+    let newCenter = new Point(f.position.x, f.position.y);
 
-function rotateOnAxis(centerOfRotation,point,rotationAngle){
+    bobina.scale.set(
+      worldScale * f.base,
+      worldScale * f.depth,
+      worldScale * f.height
+    );
+    if (!f.isStanding) {
+      bobina.rotation.z = Math.PI / 2;
+      newCenter = rotateOnAxis(
+        f.position,
+        new Point(f.position.x + f.depth / 2, f.position.y),
+        f.rotation
+      );
+    }
+
+    bobina.position.y = -(f.depth / 2); //  - 0.1 * f.depth);
+    // bobina.position.y =- 10;c
+    bobina.position.x = newCenter.x;
+    bobina.position.z = newCenter.y;
+    bobina.name = f.id;
+    bobina.floorId = f.floorId;
+    bobina.rotation.y = Three.MathUtils.degToRad(f.rotation);
+
+    if (f.isStanding) {
+      bobina.position.y = -(f.depth / 2 - 0.04 * f.depth);
+    } else {
+      bobina.position.y = -(f.base / 2 - 0.1 * f.base);
+    }
+    generateBobinaPolygon(newCenter, f);
+    scene.add(bobina);
+  });
+}
+
+function rotateOnAxis(rotationAxis, point, rotationAngle) {
   let x = point.x;
   let y = point.y;
   let newPoint = {};
   // floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
-  
 
   newPoint.x =
-    (x - centerOfRotation.x) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) -
-    (y - centerOfRotation.y) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
-    centerOfRotation.x;
+    (x - rotationAxis.x) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) -
+    (y - rotationAxis.y) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
+    rotationAxis.x;
 
-    newPoint.y =
-    (x - centerOfRotation.x) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
-    (y - centerOfRotation.y) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) +
-    centerOfRotation.y;
-    return newPoint;
+  newPoint.y =
+    (x - rotationAxis.x) * Math.sin(Three.MathUtils.degToRad(-rotationAngle)) +
+    (y - rotationAxis.y) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) +
+    rotationAxis.y;
+  return newPoint;
 }
 
-function generateFloorPolygon(floor){
-  const polygon = new dc.Polygon(new Point(floor))
+function generateFloorPolygon(center, floor) {
+  // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
+  const polygon = new dc.Polygon(center, [
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(-(floor.size.x / 2), floor.size.y / 2),
+      floor.rotation
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(floor.size.x / 2, floor.size.y / 2),
+      floor.rotation
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(floor.size.x / 2, -(floor.size.y / 2)),
+      floor.rotation
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(-(floor.size.x / 2), -(floor.size.y / 2)),
+      floor.rotation
+    ),
+  ]);
+  polygon.name = floor.id;
+  floorPolygons.push(polygon);
+
+  // let helper = new Three.Mesh(new Three.CylinderGeometry(dc.distance(new Point(0, 0), polygon.points[0]), dc.distance(new Point(0, 0), polygon.points[0]),0.0000001), new Three.MeshBasicMaterial({color: "#ff0000"}));
+  // scene.add(helper);
+  // helper.position.set(center.x, 0, center.y)
 }
 
-async function generateBobine(idPavimento) {
-  bobine = await loadJson(path2, idPavimento, "floorId");
-  bobine.forEach(async (f) => {
-    const bobina = await loadFbx("./models/bobina2.fbx");
-    // bobina.add(new Three.AxesHelper(50));
-    bobina.scale.set(0.02 * f.diameter, 0.02 * f.length, 0.02 * f.diameter);
-    bobina.rotation.z = Math.PI / 2;
-    bobina.position.y = -(f.diameter / 2 - 0.1 * f.diameter);
-    bobina.position.x = f.position.x;
-    bobina.position.z = f.position.y;
-    bobina.name = f.id;
-    bobina.floorId = f.floorId;
-    console.log(bobina);
-    scene.add(bobina);
+function generateBobinaPolygon(center, bobina) {
+  // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
+  const polygon = new dc.Polygon(center, [
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(
+        -(bobina.base / 2),
+        (bobina.isStanding ? bobina.height : bobina.depth) / 2
+      ),
+      bobina.rotation
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(
+        bobina.base / 2,
+        (bobina.isStanding ? bobina.height : bobina.depth) / 2
+      ),
+      bobina.rotation
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(
+        bobina.base / 2,
+        -((bobina.isStanding ? bobina.height : bobina.depth) / 2)
+      ),
+      bobina.rotation
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(
+        -(bobina.base / 2),
+        -((bobina.isStanding ? bobina.height : bobina.depth) / 2)
+      ),
+      bobina.rotation
+    ),
+  ]);
+  polygon.name = bobina.id;
+  bobinaPolygons.push(polygon);
+
+  // let helper = new Three.Mesh(new Three.CylinderGeometry(dc.distance(new Point(0, 0), polygon.points[0]), dc.distance(new Point(0, 0), polygon.points[0]),0.0000001), new Three.MeshBasicMaterial({color: "#ff0000"}));
+  // scene.add(helper);
+  // helper.position.set(center.x, 0, center.y)
+}
+
+
+function floorCollision() {
+  let trovato = false;
+  floorPolygons.forEach((area) => {
+    if (isInArea(new Point(forkLift.position.x, forkLift.position.z), area)) {
+      currentArea = floors.find((x) => x.id == area.name);
+      trovato = true;
+      // const test = new Three.ShapeGeometry(new Three.Shape())
+    }
   });
+
+  if (trovato == true) {
+    floorLabel.innerHTML =
+      "floor id: " + currentArea.id + "<br> floor name: " + currentArea.name;
+  } else {
+    currentArea = "";
+    floorLabel.innerHTML = "";
+  }
+}
+
+function bobinaCollision() {
+  let trovato = false;
+  bobinaPolygons.forEach((bobina) => {
+    if (isInArea(new Point(forkLift.position.x, forkLift.position.z), bobina)) {
+      currentBobina = bobine.find((x) => x.id == bobina.name);
+      trovato = true;
+    }
+  });
+
+  if (trovato == true) {
+    bobinaLabel.innerHTML =
+      "bobina id: " +
+      currentBobina.id +
+      "<br> bobina depth: " +
+      currentBobina.depth +
+      "<br>bobina diameter: " +
+      currentBobina.base;
+  } else {
+    currentBobina = "";
+    bobinaLabel.innerHTML = "";
+  }
 }
 
 async function loadFbx(path) {
   const fbxLoader = new FBXLoader();
   let x = new Three.Group();
   x = await fbxLoader.loadAsync(path);
-  console.log(x);
 
   x.traverse(function (child) {
     if (child.isMesh) {
@@ -260,26 +407,46 @@ function createButton(left, top, text, func) {
   div.style.left = left + "px";
   div.style.top = top + "px";
 
-  div.className = "btnDiv";
+  div.className = "contentDiv col-12";
   btn.addEventListener("click", func);
 
   btn.appendChild(btnText);
   div.appendChild(btn);
 
+  btn.className = "btn btn-primary p-1 col-2"
+
   document.body.appendChild(div);
 }
 
-function isInArea(point, area){
-  return pointInPolygon(new Point(0,5), new dc.Polygon(new Point(110,110),
- [new Point(-1,-1), new Point(1,-1),new Point(-1,1), new Point(1,1)]))
+function createLabel(left, top, id) {
+  const div = document.createElement("div");
+  const p = document.createElement("p");
+  p.setAttribute("id", id);
+
+  div.style.left = left + "px";
+  div.style.top = top + "px";
+
+  div.className = "contentDiv";
+  div.appendChild(p);
+  document.body.appendChild(div);
 }
 
+function isInArea(point, area) {
+  return pointInPolygon(point, area);
+}
+
+function changeCamera() {
+  if (currentCamera == editCamera) {
+    currentCamera = forkLiftCamera;
+  } else {
+    currentCamera = editCamera;
+  }
+}
 
 //#region EventListener
 window.addEventListener("resize", onResize);
 
 window.addEventListener("keydown", (event) => {
- 
   switch (event.code) {
     case "KeyA": {
       inputMovement.rotation = 1;
@@ -297,26 +464,29 @@ window.addEventListener("keydown", (event) => {
       inputMovement.movement = -1;
       break;
     }
+
+    case "KeyC": {
+      changeCamera();
+    }
   }
 });
 
 window.addEventListener("keyup", (event) => {
-  
   switch (event.code) {
     case "KeyA": {
-      inputMovement.rotation -= (1 + inputMovement.rotation)/ 2;
+      inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
       break;
     }
     case "KeyD": {
-      inputMovement.rotation += (1 - inputMovement.rotation)/ 2;
+      inputMovement.rotation += (1 - inputMovement.rotation) / 2;
       break;
     }
     case "KeyW": {
-      inputMovement.movement -= (1 + inputMovement.movement)/ 2;
+      inputMovement.movement -= (1 + inputMovement.movement) / 2;
       break;
     }
     case "KeyS": {
-      inputMovement.movement += (1 - inputMovement.movement)/ 2;
+      inputMovement.movement += (1 - inputMovement.movement) / 2;
       break;
     }
   }

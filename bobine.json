@@ -3,21 +3,27 @@
     "id": 1,
     "floorId": 1,
     "position": {
-      "x": 25,
-      "y": 40
+      "x": 20,
+      "y": 30
     },
-    "diameter": 2,
-    "length": 3
+    "base": 5,
+    "height": 5,
+    "depth": 3,
+    "rotation": 0,
+    "isStanding": true
   },
   {
     "id": 2,
     "floorId": 1,
     "position": {
-      "x": 8,
+      "x": 5,
       "y": 3
     },
-    "diameter": 2,
-    "length": 5
+    "base": 4,
+    "height": 4,
+    "depth": 4,
+    "rotation": 45,
+    "isStanding": false
   },
   {
     "id": 3,
@@ -26,7 +32,10 @@
       "x": -8,
       "y": 3
     },
-    "diameter": 3,
-    "length": 2
+    "base": 8,
+    "height": 8,
+    "depth": 2,
+    "rotation": 90,
+    "isStanding": false
   }
 ]

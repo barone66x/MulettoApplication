@@ -10,7 +10,7 @@
       "x": 10,
       "y": 15
     },
-    "rotation": 45
+    "rotation": 90
   },
   {
     "id": 2,
@@ -29,13 +29,13 @@
     "id": 3,
     "name": "settore 3",
     "position": {
-      "x": -10,
-      "y": 0
+      "x": -5,
+      "y": -5
     },
     "size": {
-      "x": 15,
-      "y": 7
+      "x": 10,
+      "y": 10
     },
-    "rotation": 45
-  }
+    "rotation": 90
+  } 
 ]
