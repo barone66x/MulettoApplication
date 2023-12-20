@@ -73,8 +73,20 @@ const forkLiftCamera = new Three.PerspectiveCamera(
   5000 / worldScale
 );
 
+const skyCamera = new Three.PerspectiveCamera(
+  70,
+  res.width / res.height,
+  0.1,
+  5000 / worldScale
+);
+
 forkLiftCamera.position.z -= 0.5 / worldScale;
 forkLiftCamera.position.y -= 0.75 / worldScale;
+
+skyCamera.position.x = 0;
+skyCamera.position.y = 10 / worldScale;
+skyCamera.position.z = 0;
+skyCamera.lookAt(new Three.Vector3(0, 0, 0));
 
 const control = new ArcballControls(editCamera, renderer.domElement, scene);
 let currentCamera = forkLiftCamera;
@@ -96,15 +108,15 @@ createButton("generateBtn", 199, 10, "Genera Bobina", () => {
   unloadBtn.disabled = false;
 });
 
-createButton("unloadBtn",302, 10, "Scarica Bobina", () => {
+createButton("unloadBtn", 302, 10, "Scarica Bobina", () => {
   unloadForklift();
   unloadBtn.disabled = true;
-  generateBtn.disabled = false
+  generateBtn.disabled = false;
 });
 
 createButton("loadBtn", 405, 10, "Carica Bobina", () => {
   loadForklift();
-  loadBtn.disabled = true
+  loadBtn.disabled = true;
   generateBtn.disabled = true;
   unloadBtn.disabled = false;
 });
@@ -181,9 +193,10 @@ forkLift.position.y = -22 * forkLiftScale * (worldScale / 0.02);
 forkLift.scale.multiplyScalar(worldScale * forkLiftScale);
 forkLift.rotation.z = Math.PI;
 forkLift.add(forkLiftCamera);
+forkLift.add(skyCamera);
 // #endregion
 
-//inizialmente disabilito il bottone del carica/scarica bobina 
+//inizialmente disabilito il bottone del carica/scarica bobina
 
 let generateBtn = document.getElementById("generateBtn");
 
@@ -207,7 +220,7 @@ function animate() {
   if (!isForkliftLoaded) {
     bobinaCollision();
   }
-  
+
   renderer.render(scene, currentCamera);
   requestAnimationFrame(animate);
 }
@@ -354,38 +367,38 @@ function generateBobinaPolygon(center, bobina) {
   const polygon = new dc.Polygon(center, [
     rotateOnAxis(
       new Point(0, 0),
-      new Point(0 , bobina.base / 2),
+      new Point(0, bobina.base / 2),
       bobina.rotation
     ),
     rotateOnAxis(
-      new Point(0 ,0),
+      new Point(0, 0),
       new Point(0, -bobina.base / 2),
       bobina.rotation
     ),
     rotateOnAxis(
       new Point(0, 0),
-      new Point(-bobina.depth / 2 , bobina.base / 2),
+      new Point(-bobina.depth / 2, bobina.base / 2),
       bobina.rotation
     ),
     rotateOnAxis(
-      new Point(0 ,0),
+      new Point(0, 0),
       new Point(-bobina.depth / 2, -bobina.base / 2),
       bobina.rotation
     ),
   ]);
 
-  console.log(bobina)
-
   polygon.name = bobina.id;
   bobinaPolygons.push(polygon);
 
   polygon.calcPoints.forEach((point) => {
-    const helper = new Three.Mesh(new Three.BoxGeometry(0.5,10,0.5), new Three.MeshNormalMaterial());
+    const helper = new Three.Mesh(
+      new Three.BoxGeometry(0.5, 10, 0.5),
+      new Three.MeshNormalMaterial()
+    );
     helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
     helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
     scene.add(helper);
-  }) ;
-
+  });
 }
 
 function removePolygon(position) {
@@ -513,6 +526,8 @@ function isInArea(point, area) {
 function changeCamera() {
   if (currentCamera == editCamera) {
     currentCamera = forkLiftCamera;
+  } else if (currentCamera == forkLiftCamera) {
+    currentCamera = skyCamera;
   } else {
     currentCamera = editCamera;
   }
@@ -542,21 +557,21 @@ function unloadForklift() {
     currentBobina.isStanding = false;
     constHeight = 0.1;
   }
-
+  console.log("MULETTO");
+  console.log(Three.MathUtils.radToDeg(forkLift.rotation.y));
+  console.log("BOBINA");
+  console.log(Three.MathUtils.radToDeg(bobina.rotation.y));
   bobina.position.x = forkLift.position.x;
   bobina.position.y = -(bobinaHeight / 2 - constHeight * bobinaHeight);
   bobina.position.z = forkLift.position.z;
-  bobina.rotation.y = -(bobina.rotation.y - forkLift.rotation.y);
-
+  bobina.rotation.y = bobina.rotation.y + forkLift.rotation.y;
+  console.log("BOBINA CAMBIATO");
+  console.log(Three.MathUtils.radToDeg(bobina.rotation.y));
   bobina.translateZ(currentBobinaOffsetY);
   bobina.translateY(-currentBobinaOffsetX);
 
   currentBobina.position = { x: bobina.position.x, y: bobina.position.z };
-  currentBobina.rotation = Three.MathUtils.radToDeg(
-    -(bobina.rotation.y - forkLift.rotation.y)
-  );
-
-  currentBobina.rotation = Three.MathUtils.radToDeg(forkLift.rotation.y);
+  currentBobina.rotation = Three.MathUtils.radToDeg(bobina.rotation.y );
 
   currentBobina.floorId = currentArea.id ? currentArea.id : 0;
 
@@ -582,6 +597,7 @@ function loadForklift() {
 
   //spostamento a destra e sinistra che varia in base alla bobina sdraiata o in piedi
   let bobinaHeight;
+  let bobinaOffset;
   let constheight;
   let constwidth;
   let bobinaXtranslation;
@@ -590,23 +606,35 @@ function loadForklift() {
 
   if (Three.MathUtils.radToDeg(newBobina.rotation.z) <= 0.1) {
     bobinaHeight = currentBobina.depth;
+    bobinaOffset = currentBobina.base;
     bobinaXtranslation = currentBobina.base;
-    console.log("cambiato");
     constheight = -1 / 3.9;
     constwidth = 0.5;
   } else {
     bobinaHeight = currentBobina.base;
+    bobinaOffset = currentBobina.depth;
     bobinaXtranslation = currentBobina.depth;
     constheight = 1 / 6.4;
     constwidth = 0.02;
   }
 
-  currentBobinaOffsetX =
-    bobinaXtranslation / forkLiftScale / 2 -
-    (constwidth * bobinaXtranslation) / forkLiftScale;
-  currentBobinaOffsetY = -(2 + currentBobina.base / forkLiftScale / 2 / 0.642);
+  // currentBobinaOffsetX =
+  //   bobinaXtranslation / forkLiftScale / 2 -
+  //   (constwidth * bobinaXtranslation) / forkLiftScale;
+
+  // currentBobinaOffsetX = newBobina.position.x - forkLift.position.x;
+  // currentBobinaOffsetY = newBobina.position.z - forkLift.position.z;
+  // currentBobinaOffsetY = -(2 + currentBobina.base / forkLiftScale / 2 / 0.642);
 
   // console.log(currentBobinaOffsetX)
+
+
+  currentBobinaOffsetX =
+  bobinaOffset / forkLiftScale / 2 - (0.02 * bobinaOffset) / forkLiftScale;
+
+  currentBobinaOffsetY = -(2 + currentBobina.base / forkLiftScale / 2 / 0.642);  
+
+
 
   newBobina.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
   newBobina.position.y =
@@ -624,7 +652,9 @@ function loadForklift() {
   forkLift.add(newBobina);
   removePolygon(new Point(forkLift.position.x, forkLift.position.z));
 
-  newBobina.rotation.y = -(newBobina.rotation.y - forkLift.rotation.y);
+   newBobina.rotation.y +=  forkLift.rotation.y;
+
+
   console.log("rotation post ");
   console.log(Three.MathUtils.radToDeg(newBobina.rotation.x));
   console.log(Three.MathUtils.radToDeg(newBobina.rotation.y));
