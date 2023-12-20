@@ -374,6 +374,8 @@ function generateBobinaPolygon(center, bobina) {
     ),
   ]);
 
+  console.log(bobina)
+
   polygon.name = bobina.id;
   bobinaPolygons.push(polygon);
 
@@ -546,13 +548,16 @@ function unloadForklift() {
   bobina.position.z = forkLift.position.z;
   bobina.rotation.y = -(bobina.rotation.y - forkLift.rotation.y);
 
-  // bobina.translateZ(currentBobinaOffsetY);
-  // bobina.translateY(-currentBobinaOffsetX);
+  bobina.translateZ(currentBobinaOffsetY);
+  bobina.translateY(-currentBobinaOffsetX);
 
   currentBobina.position = { x: bobina.position.x, y: bobina.position.z };
   currentBobina.rotation = Three.MathUtils.radToDeg(
     -(bobina.rotation.y - forkLift.rotation.y)
   );
+
+  currentBobina.rotation = Three.MathUtils.radToDeg(forkLift.rotation.y);
+
   currentBobina.floorId = currentArea.id ? currentArea.id : 0;
 
   generateBobinaPolygon(
