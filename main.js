@@ -91,14 +91,22 @@ createButton("stressBtn", 120, 10, "Stress Test", () => {
 
 createButton("generateBtn", 199, 10, "Genera Bobina", () => {
   spawnBobina(5);
+  generateBtn.disabled = true;
+  loadBtn.disabled = true;
+  unloadBtn.disabled = false;
 });
 
-createButton("unloadBtn", 302, 10, "Scarica Bobina", () => {
+createButton("unloadBtn",302, 10, "Scarica Bobina", () => {
   unloadForklift();
+  unloadBtn.disabled = true;
+  generateBtn.disabled = false
 });
 
 createButton("loadBtn", 405, 10, "Carica Bobina", () => {
   loadForklift();
+  loadBtn.disabled = true
+  generateBtn.disabled = true;
+  unloadBtn.disabled = false;
 });
 
 createButton("forwardBtn", 50, 150, "↑", () => {});
@@ -175,7 +183,10 @@ forkLift.rotation.z = Math.PI;
 forkLift.add(forkLiftCamera);
 // #endregion
 
-//inizialmente disabilito il bottone del carica/scarica bobina
+//inizialmente disabilito il bottone del carica/scarica bobina 
+
+let generateBtn = document.getElementById("generateBtn");
+
 let loadBtn = document.getElementById("loadBtn");
 loadBtn.disabled = true;
 
@@ -195,12 +206,8 @@ function animate() {
   floorCollision();
   if (!isForkliftLoaded) {
     bobinaCollision();
-    unloadBtn.disabled = true;
-  } else {
-    unloadBtn.disabled = false;
-    loadBtn.disabled = true;
   }
-
+  
   renderer.render(scene, currentCamera);
   requestAnimationFrame(animate);
 }
@@ -345,46 +352,42 @@ function generateFloorPolygon(center, floor) {
 
 function generateBobinaPolygon(center, bobina) {
   // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
+  
   const polygon = new dc.Polygon(center, [
     rotateOnAxis(
       new Point(0, 0),
-      new Point(
-        -(bobina.base / 2),
-        (bobina.isStanding ? bobina.height : bobina.depth) / 2
-      ),
+      new Point(0 , bobina.base / 2),
+      bobina.rotation
+    ),
+    rotateOnAxis(
+      new Point(0 ,0),
+      new Point(0, -bobina.base / 2),
       bobina.rotation
     ),
     rotateOnAxis(
       new Point(0, 0),
-      new Point(
-        bobina.base / 2,
-        (bobina.isStanding ? bobina.height : bobina.depth) / 2
-      ),
+      new Point(-bobina.depth / 2 , bobina.base / 2),
       bobina.rotation
     ),
     rotateOnAxis(
-      new Point(0, 0),
-      new Point(
-        bobina.base / 2,
-        -((bobina.isStanding ? bobina.height : bobina.depth) / 2)
-      ),
-      bobina.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(
-        -(bobina.base / 2),
-        -((bobina.isStanding ? bobina.height : bobina.depth) / 2)
-      ),
+      new Point(0 ,0),
+      new Point(-bobina.depth / 2, -bobina.base / 2),
       bobina.rotation
     ),
   ]);
+
   polygon.name = bobina.id;
   bobinaPolygons.push(polygon);
+  console.log(polygon);
 
-  // let helper = new Three.Mesh(new Three.CylinderGeometry(dc.distance(new Point(0, 0), polygon.points[0]), dc.distance(new Point(0, 0), polygon.points[0]),0.0000001), new Three.MeshBasicMaterial({color: "#ff0000"}));
-  // scene.add(helper);
-  // helper.position.set(center.x, 0, center.y)
+
+  polygon.calcPoints.forEach((point) => {
+    const helper = new Three.Mesh(new Three.BoxGeometry(0.5,10,0.5), new Three.MeshNormalMaterial());
+    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+    helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
+    scene.add(helper);
+  }) ;
+
 }
 
 function removePolygon(position) {

@@ -3,8 +3,8 @@
     "id": 1,
     "floorId": 1,
     "position": {
-      "x": 20,
-      "y": 30
+      "x": 0,
+      "y": 0
     },
     "base": 5,
     "height": 5,
@@ -16,13 +16,13 @@
     "id": 2,
     "floorId": 1,
     "position": {
-      "x": 5,
-      "y": 3
+      "x": 10,
+      "y": 0
     },
     "base": 5,
     "height": 5,
     "depth": 4,
-    "rotation": 45,
+    "rotation": 0,
     "isStanding": false
   },
   {
