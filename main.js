@@ -351,8 +351,6 @@ function generateFloorPolygon(center, floor) {
 }
 
 function generateBobinaPolygon(center, bobina) {
-  // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
-  
   const polygon = new dc.Polygon(center, [
     rotateOnAxis(
       new Point(0, 0),
@@ -378,8 +376,6 @@ function generateBobinaPolygon(center, bobina) {
 
   polygon.name = bobina.id;
   bobinaPolygons.push(polygon);
-  console.log(polygon);
-
 
   polygon.calcPoints.forEach((point) => {
     const helper = new Three.Mesh(new Three.BoxGeometry(0.5,10,0.5), new Three.MeshNormalMaterial());
@@ -406,7 +402,6 @@ function floorCollision() {
     if (isInArea(new Point(forkLift.position.x, forkLift.position.z), area)) {
       currentArea = floors.find((x) => x.id == area.name);
       trovato = true;
-      // const test = new Three.ShapeGeometry(new Three.Shape())
     }
   });
 
