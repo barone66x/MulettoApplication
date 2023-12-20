@@ -23,6 +23,7 @@ const inputMovement = {
 let path1 = "./floor.json";
 let path2 = "./bobine.json";
 let forkliftPath = "./models/Forklift.fbx";
+let bobinaPath = "./models/bobina2.fbx";
 let floors = [];
 let bobine = [];
 let floorPolygons = [];
@@ -31,6 +32,8 @@ let bobinaPolygons = [];
 let rotationSpeed = 0.05;
 let translationSpeed = 0.25;
 const worldScale = 0.002;
+
+let isForkliftLoaded = false;
 
 const clock = new Three.Clock();
 
@@ -55,30 +58,93 @@ bobine = await loadJson(path2);
 let currentArea;
 let currentBobina;
 
+let currentBobinaOffsetX;
+let currentBobinaOffsetY;
+
 //#region Camere e Control
 const editCamera = new Three.PerspectiveCamera(70, res.width / res.height);
 editCamera.position.z -= 8;
 editCamera.lookAt(0, 0, 0);
 
 const forkLiftCamera = new Three.PerspectiveCamera(
-  70,
+  90,
   res.width / res.height,
   0.1,
   5000 / worldScale
 );
+
+forkLiftCamera.position.z -= 0.50 / worldScale;
+forkLiftCamera.position.y -= 0.75 / worldScale;
+
 
 const control = new ArcballControls(editCamera, renderer.domElement, scene);
 let currentCamera = forkLiftCamera;
 //#endregion
 
 //#region Creazione Bottoni
-createButton(10, 10, "Genera Bobina", () => {
-  // generateBobine(3);
- 
+createButton("cameraBtn",10, 10, "Cambia Camera", () => {
+  changeCamera();
 });
-createButton(150, 10, "Carica Bobina", () =>{
 
+createButton("stressBtn",120, 10, "Stress Test", () =>{
+  stressTest();
 })
+
+createButton("generateBtn",199, 10, "Genera Bobina", () => {
+  spawnBobina(5);
+});
+
+createButton("unloadBtn",302, 10, "Scarica Bobina", () => {
+ unloadForklift();
+});
+
+createButton("loadBtn",405, 10, "Carica Bobina", () => {
+  loadForklift();
+ });
+
+ createButton("forwardBtn",50, 150, "↑", () => {
+  
+ });
+ createButton("backBtn",50, 210, "↓", () => {
+  
+ });
+ createButton("leftBtn",20, 180, "←", () => {
+  
+ });
+ createButton("rightBtn",73, 180, "→", () => {
+  
+ });
+
+
+btnAddEventListener("forwardBtn", "touchstart", () =>{
+  inputMovement.movement = 1;
+});
+btnAddEventListener("forwardBtn", "touchend", () =>{
+  inputMovement.movement -= (1 + inputMovement.movement) / 2;
+});
+
+btnAddEventListener("backBtn", "touchstart", () =>{
+  inputMovement.movement = -1;
+});
+btnAddEventListener("backBtn", "touchend", () =>{
+  inputMovement.movement += (1 - inputMovement.movement) / 2;
+});
+
+btnAddEventListener("leftBtn", "touchstart", () =>{
+  inputMovement.rotation =1;
+});
+btnAddEventListener("leftBtn", "touchend", () =>{
+  inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
+});
+
+btnAddEventListener("rightBtn", "touchstart", () =>{
+  inputMovement.rotation = -1;
+});
+btnAddEventListener("rightBtn", "touchend", () =>{
+  inputMovement.rotation += (1 - inputMovement.rotation) / 2;
+});
+
+console.log(document)
 
 //#endregion
 
@@ -111,25 +177,46 @@ scene.add(plane);
 // boxB.int
 // scene.add(box);
 
+const forkLiftScale = 2;
+
 const forkLift = await loadFbx(forkliftPath);
 scene.add(forkLift);
-forkLift.position.y = -22 * (worldScale / 0.02);
-forkLift.scale.multiplyScalar(worldScale);
+forkLift.position.y = -22 * forkLiftScale * (worldScale / 0.02);
+forkLift.scale.multiplyScalar(worldScale * forkLiftScale);
 forkLift.rotation.z = Math.PI;
 forkLift.add(forkLiftCamera);
 // #endregion
+
+//inizialmente disabilito il bottone del carica/scarica bobina 
+let loadBtn = document.getElementById("loadBtn");
+loadBtn.disabled = true;
+ 
+let unloadBtn = document.getElementById("unloadBtn");
+unloadBtn.disabled = true;
 
 generateFloors();
 generateBobine();
 
 document.body.appendChild(renderer.domElement);
 
+
+//ANIMATE
 function animate() {
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
   forkLift.translateZ(-inputMovement.movement * translationSpeed);
 
   floorCollision();
-  bobinaCollision();
+  if (!isForkliftLoaded)
+  {
+    bobinaCollision();
+    unloadBtn.disabled = true;
+  }
+  else
+  {
+    unloadBtn.disabled = false;
+  }
+  
+  
 
   renderer.render(scene, currentCamera);
   requestAnimationFrame(animate);
@@ -188,10 +275,11 @@ function generateFloors() {
 
   });
 }
+
 async function generateBobine() {
   bobine = await loadJson(path2);
   bobine.forEach(async (f) => {
-    const bobina = await loadFbx("./models/bobina2.fbx");
+    const bobina = await loadFbx(bobinaPath);
     let newCenter = new Point(f.position.x, f.position.y);
 
 
@@ -208,9 +296,6 @@ async function generateBobine() {
         f.rotation
       );
     }
-
-    bobina.position.y = -(f.depth / 2); //  - 0.1 * f.depth);
-    // bobina.position.y =- 10;c
     bobina.position.x = newCenter.x;
     bobina.position.z = newCenter.y;
     bobina.name = f.id;
@@ -280,6 +365,7 @@ function generateFloorPolygon(center, floor) {
 
 
 function generateBobinaPolygon(center, bobina) {
+  console.log(bobina)
   // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
   const polygon = new dc.Polygon(center, [
     rotateOnAxis(
@@ -354,17 +440,23 @@ function bobinaCollision() {
   });
 
   if (trovato == true) {
-    bobinaLabel.innerHTML =
+    changeBobinaLabel()
+    loadBtn.disabled = false;
+  } else {
+    currentBobina = "";
+    bobinaLabel.innerHTML = "";
+    loadBtn.disabled = true;
+  }
+}
+
+function changeBobinaLabel() {
+  bobinaLabel.innerHTML =
       "bobina id: " +
       currentBobina.id +
       "<br> bobina depth: " +
       currentBobina.depth +
       "<br>bobina diameter: " +
       currentBobina.base;
-  } else {
-    currentBobina = "";
-    bobinaLabel.innerHTML = "";
-  }
 }
 
 async function loadFbx(path) {
@@ -394,23 +486,26 @@ async function loadFbx(path) {
 
 }
 
-function createButton(left, top, text, func) {
+function createButton(id,left, top, text,func) {
   const div = document.createElement("div");
   const btn = document.createElement("button");
   const btnText = document.createTextNode(text);
-
+  
   div.style.left = left + "px";
   div.style.top = top + "px";
-
-  div.className = "contentDiv col-12";
+  btn.setAttribute("id", id);
+  div.className = "contentDiv";
   btn.addEventListener("click", func);
-
+  
   btn.appendChild(btnText);
   div.appendChild(btn);
 
-  btn.className = "btn btn-primary p-1 col-2"
-
   document.body.appendChild(div);
+}
+
+function btnAddEventListener(btnId, event,func){
+  let btn = document.getElementById(btnId);
+  btn.addEventListener(event, func);
 }
 
 function createLabel(left, top, id) {
@@ -437,6 +532,79 @@ function changeCamera() {
     currentCamera = editCamera;
   }
 }
+
+
+//#region interazione bobine
+
+
+function unloadForklift(){
+  
+  let bobina = forkLift.children.pop();
+  scene.add(bobina);
+  
+  bobina.scale.multiplyScalar(worldScale);
+  bobina.scale.multiplyScalar(forkLiftScale);
+  
+  bobina.rotation.y = forkLift.rotation.y;
+  bobina.position.x = forkLift.position.x;
+  bobina.position.y = -(currentBobina.base / 2 - 0.1 * currentBobina.base);
+  bobina.position.z = forkLift.position.z;
+  
+  
+  bobina.translateZ(currentBobinaOffsetY);
+  bobina.translateY(-currentBobinaOffsetX);
+  
+  currentBobina.isStanding = false;
+  currentBobina.position = {x: bobina.position.x, y:bobina.position.z};
+  currentBobina.rotation = Three.MathUtils.radToDeg(forkLift.rotation.y);
+  currentBobina.floorId = (currentArea.id) ? currentArea.id : 0;
+  console.log(currentBobina);
+
+  generateBobinaPolygon(new Point(bobina.position.x, bobina.position.z), currentBobina);
+  
+  bobine.push(currentBobina);
+
+  isForkliftLoaded = false;
+  
+}
+
+function loadForklift(){
+  
+ }
+
+async function spawnBobina(id){
+  let bobina = (await loadJson("bobineEsterne.json", "id", id))[0];
+  let newBobina = await loadFbx(bobinaPath);
+  
+  newBobina.name = bobina.id;
+  newBobina.scale.set(
+    bobina.base / forkLiftScale,
+    bobina.depth / forkLiftScale,
+    bobina.height / forkLiftScale
+  );
+  newBobina.rotation.z = Math.PI / 2;
+
+  currentBobinaOffsetX = (bobina.depth / forkLiftScale / 2 - 0.02 * bobina.depth / forkLiftScale);
+  currentBobinaOffsetY = -( 2 + ((bobina.base / forkLiftScale / 2 ) / 0.642)); 
+
+  console.log(currentBobinaOffsetX)
+
+  newBobina.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
+  newBobina.position.y = -( -forkLift.position.y - ((bobina.base / forkLiftScale / 2 ) / 0.625)) / (worldScale * forkLiftScale);  
+  newBobina.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
+  
+  forkLift.add(newBobina)
+  isForkliftLoaded = true;
+  
+  currentBobina = bobina
+  changeBobinaLabel();
+
+}
+
+
+//#endregion
+
+
 
 //#region EventListener
 window.addEventListener("resize", onResize);
@@ -490,12 +658,31 @@ window.addEventListener("keyup", (event) => {
 //#endregion
 
 //#region Carica Liste
-async function loadJson(path, filter, field) {
+async function loadJson(path, field, filter) {
   let res = await (await fetch(path)).json();
   if (filter && field) {
     res = res.filter((x) => x[field] == filter);
   }
 
   return res;
+}
+
+async function stressTest()
+{
+  const bobina = await loadFbx(bobinaPath);
+  bobina.scale.multiplyScalar(worldScale);
+  for (let i=0; i<50;i++)
+  {
+    for (let j= 0; j<50; j++)
+    {
+      // const bobina = new Three.Mesh(new Three.BoxGeometry(1,1,1), new Three.MeshBasicMaterial({ color: "#ff0000" }))
+      const x = bobina.clone()
+      // x.scale.multiplyScalar(j % 50)
+      x.position.x = i;
+      x.position.z = j;
+      x.position.y =-2;
+      scene.add(x);
+    }
+  }
 }
 //#endregion

@@ -29,13 +29,13 @@
     "id": 3,
     "floorId": 3,
     "position": {
-      "x": -8,
-      "y": 3
+      "x": 0,
+      "y": 0
     },
-    "base": 8,
-    "height": 8,
-    "depth": 2,
+    "base": 10,
+    "height": 10,
+    "depth": 1,
     "rotation": 90,
-    "isStanding": false
+    "isStanding": true
   }
 ]
