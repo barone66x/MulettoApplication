@@ -127,6 +127,9 @@ createButton("backBtn", 50, 210, "↓", () => {});
 createButton("leftBtn", 20, 180, "←", () => {});
 createButton("rightBtn", 73, 180, "→", () => {});
 
+//versione css dei tasti direzionali
+// createControllerButton(); 
+
 btnAddEventListener("forwardBtn", "touchstart", () => {
   inputMovement.movement = 1;
 });
@@ -251,7 +254,9 @@ function generateFloors() {
 
     floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
-    // floor.position.x =
+   
+
+    // floor.position.x 
     //   (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) -
     //   (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
     //   f.position.x;
@@ -290,10 +295,10 @@ async function generateBobine() {
       worldScale * f.height
     );
     if (!f.isStanding) {
-      bobina.rotation.z = Math.PI / 2;
+      bobina.rotation.z = -Math.PI / 2;
       newCenter = rotateOnAxis(
         f.position,
-        new Point(f.position.x, f.position.y + f.depth / 2),
+        new Point(f.position.x, f.position.y),
         f.rotation
       );
     }
@@ -378,12 +383,12 @@ function generateBobinaPolygon(center, bobina) {
     ),
     rotateOnAxis(
       new Point(0, 0),
-      new Point(-bobina.depth / 2, bobina.base / 2),
+      new Point(bobina.depth / 2, bobina.base / 2),
       bobina.rotation
     ),
     rotateOnAxis(
       new Point(0, 0),
-      new Point(-bobina.depth / 2, -bobina.base / 2),
+      new Point(bobina.depth / 2, -bobina.base / 2),
       bobina.rotation
     ),
   ]);
@@ -502,6 +507,60 @@ function createButton(id, left, top, text, func) {
   document.body.appendChild(div);
 }
 
+function createControllerButton() {
+  const div = document.createElement("div");
+
+  const btnUp = document.createElement("button");
+  const btnDown = document.createElement("button");
+  const btnLeft = document.createElement("button");
+  const btnRight = document.createElement("button");
+
+
+  const spanUp = document.createElement("span");
+  const spanDown = document.createElement("span");
+  const spanLeft = document.createElement("span");
+  const spanRight = document.createElement("span");
+
+  const spanUpText = document.createTextNode("up");
+  const spanDownUpText = document.createTextNode("down");
+  const spanLeftText = document.createTextNode("left");
+  const spanRightText = document.createTextNode("right");
+
+  div.className = "directional-buttons";
+
+  btnUp.className = "direction-button up";
+  btnDown.className = "direction-button down";
+  btnLeft.className = "direction-button left";
+  btnRight.className = "direction-button right";
+
+  btnUp.setAttribute("id", "forwardBtn");
+  btnDown.setAttribute("id", "backBtn");
+  btnLeft.setAttribute("id", "leftBtn");
+  btnRight.setAttribute("id", "rightBtn");
+
+  spanUp.className = "visually-hidden";
+  spanDown.className = "visually-hidden";
+  spanLeft.className = "visually-hidden";
+  spanRight.className = "visually-hidden";
+
+  spanUp.appendChild(spanUpText);
+  spanDown.appendChild(spanDownUpText);
+  spanLeft.appendChild(spanLeftText);
+  spanRight.appendChild(spanRightText);
+
+  btnUp.appendChild(spanUp);
+  btnDown.appendChild(spanDown);
+  btnLeft.appendChild(spanLeft);
+  btnRight.appendChild(spanRight);
+
+  div.appendChild(btnUp);
+  div.appendChild(btnDown);
+  div.appendChild(btnLeft);
+  div.appendChild(btnRight);
+
+  document.body.appendChild(div);
+}
+
 function btnAddEventListener(btnId, event, func) {
   let btn = document.getElementById(btnId);
   btn.addEventListener(event, func);
@@ -541,8 +600,8 @@ function unloadForklift() {
   scene.attach(bobina);
 
   currentBobina.position = { x: bobina.position.x, y: bobina.position.z };
-  console.log(Three.MathUtils.radToDeg(bobina.rotation.y ));
-  currentBobina.rotation = Three.MathUtils.radToDeg(bobina.rotation.y );
+  console.log(Three.MathUtils.radToDeg(bobina.rotation.y));
+  currentBobina.rotation = Three.MathUtils.radToDeg(bobina.rotation.y);
 
   currentBobina.floorId = currentArea.id ? currentArea.id : 0;
 
@@ -556,7 +615,6 @@ function unloadForklift() {
 
 function loadForklift() {
   console.log("LOAD");
-  // console.log(scene.children[7].children.length);
   let newBobina = scene.children.find(
     (x) =>
       x.name == currentBobina.id && x.type == "Group" && x.children.length == 3
