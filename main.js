@@ -2,6 +2,7 @@
 import * as Three from "three";
 import "./style.css";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls";
+import { ShapeGeometry } from "three/src/geometries/ShapeGeometry";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { pointInPolygon } from "detect-collisions";
 import * as dc from "detect-collisions";
@@ -128,7 +129,7 @@ createButton("leftBtn", 20, 180, "←", () => {});
 createButton("rightBtn", 73, 180, "→", () => {});
 
 //versione css dei tasti direzionali
-// createControllerButton(); 
+// createControllerButton();
 
 btnAddEventListener("forwardBtn", "touchstart", () => {
   inputMovement.movement = 1;
@@ -213,6 +214,7 @@ unloadBtn.disabled = true;
 generateFloors();
 generateBobine();
 
+
 document.body.appendChild(renderer.domElement);
 
 //ANIMATE
@@ -242,7 +244,7 @@ function onResize() {
   currentCamera.updateProjectionMatrix(); //Se si modificano queste proprietà della currentCamera bisogna aggiornare la matrice d proiezione
 }
 
-function generateFloors() {
+function generateFloorsOld() {
   floors.forEach((f) => {
     const floor = new Three.Mesh(
       new Three.BoxGeometry(f.size.x, 0.3, f.size.y),
@@ -254,9 +256,7 @@ function generateFloors() {
 
     floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
-   
-
-    // floor.position.x 
+    // floor.position.x
     //   (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) -
     //   (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
     //   f.position.x;
@@ -280,6 +280,29 @@ function generateFloors() {
 
     generateFloorPolygon(newCenter, f);
     // scene.add(cyl);
+  });
+}
+
+function generateFloors() {
+  floors.forEach((floor) => {
+    let floorShape = new Three.Shape();
+    floorShape.moveTo(floor.point1.x, floor.point1.y)
+    floorShape.lineTo(floor.point2.x, floor.point2.y)
+    floorShape.lineTo(floor.point3.x, floor.point3.y)
+    floorShape.lineTo(floor.point4.x, floor.point4.y)
+    floorShape.lineTo(floor.point1.x, floor.point1.y)
+    const floorGeometry = new Three.ShapeGeometry(floorShape);
+    let newFloor = new Three.Mesh(
+      floorGeometry,
+      new Three.MeshPhongMaterial({ side: Three.DoubleSide })
+    );
+    newFloor.position.y = plane.position.y - 0.2;
+    // console.log(floorShape);
+    scene.add(newFloor);
+    generateFloorPolygon(floor);
+    newFloor.name = floor.id;
+    // console.log(newFloor.position);
+    newFloor.rotation.x = Math.PI / 2;
   });
 }
 
@@ -337,7 +360,7 @@ function rotateOnAxis(rotationAxis, point, rotationAngle) {
   return newPoint;
 }
 
-function generateFloorPolygon(center, floor) {
+function generateFloorPolygonOld(center, floor) {
   // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
   const polygon = new dc.Polygon(center, [
     rotateOnAxis(
@@ -369,6 +392,31 @@ function generateFloorPolygon(center, floor) {
   // helper.position.set(center.x, 0, center.y)
 }
 
+function generateFloorPolygon(floorJson){
+  const fakeCenter = new Point(floorJson.point1.x,floorJson.point1.y);
+  const polygon = new dc.Polygon(fakeCenter,[
+    new Point(floorJson.point1.x - fakeCenter.x, floorJson.point1.y - fakeCenter.y),
+    new Point(floorJson.point2.x - fakeCenter.x, floorJson.point2.y - fakeCenter.y),
+    new Point(floorJson.point3.x - fakeCenter.x, floorJson.point3.y - fakeCenter.y),
+    new Point(floorJson.point4.x - fakeCenter.x, floorJson.point4.y - fakeCenter.y)
+  ]);
+  polygon.name = floorJson.id;
+
+  polygon.calcPoints.forEach((point) => {
+    const helper = new Three.Mesh(
+      new Three.BoxGeometry(0.5, 10, 0.5),
+      new Three.MeshNormalMaterial()
+    );
+    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+    scene.add(helper);
+  });
+
+  // console.log(floorJson.point2.x - fakeCenter.x);
+  // console.log(floorJson.point2.y - fakeCenter.y);
+  console.log(polygon);
+  floorPolygons.push(polygon);
+}
+
 function generateBobinaPolygon(center, bobina) {
   const polygon = new dc.Polygon(center, [
     rotateOnAxis(
@@ -396,15 +444,15 @@ function generateBobinaPolygon(center, bobina) {
   polygon.name = bobina.id;
   bobinaPolygons.push(polygon);
 
-  polygon.calcPoints.forEach((point) => {
-    const helper = new Three.Mesh(
-      new Three.BoxGeometry(0.5, 10, 0.5),
-      new Three.MeshNormalMaterial()
-    );
-    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
-    helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
-    scene.add(helper);
-  });
+  // polygon.calcPoints.forEach((point) => {
+  //   const helper = new Three.Mesh(
+  //     new Three.BoxGeometry(0.5, 10, 0.5),
+  //     new Three.MeshNormalMaterial()
+  //   );
+  //   helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+  //   helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
+  //   scene.add(helper);
+  // });
 }
 
 function removePolygon(position) {
@@ -514,7 +562,6 @@ function createControllerButton() {
   const btnDown = document.createElement("button");
   const btnLeft = document.createElement("button");
   const btnRight = document.createElement("button");
-
 
   const spanUp = document.createElement("span");
   const spanDown = document.createElement("span");

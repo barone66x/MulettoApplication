@@ -2,40 +2,61 @@
   {
     "id": 1,
     "name": "settore 1",
-    "position": {
-      "x": 20,
-      "y": 30
-    },
-    "size": {
+    "point1": {
       "x": 10,
       "y": 15
     },
-    "rotation": 90
+    "point2": {
+      "x": 30,
+      "y": 15
+    },
+    "point3": {
+      "x": 30,
+      "y": 5
+    },
+    "point4": {
+      "x": 10,
+      "y": 5
+    }
   },
   {
     "id": 2,
     "name": "settore 2",
-    "position": {
+    "point1": {
+      "x": -15,
+      "y": 15
+    },
+    "point2": {
+      "x": -5,
+      "y": 5
+    },
+    "point3": {
+      "x": -10,
+      "y": 0
+    },
+    "point4": {
       "x": -20,
-      "y": 20
-    },
-    "size": {
-      "x": 10,
-      "y": 8
-    },
-    "rotation": 10
+      "y": 12
+    }
   },
   {
     "id": 3,
     "name": "settore 3",
-    "position": {
-      "x": -5,
+    "point1": {
+      "x": -20,
       "y": -5
     },
-    "size": {
-      "x": 10,
-      "y": 10
+    "point2": {
+      "x": 5,
+      "y": -20
     },
-    "rotation": 90
-  } 
+    "point3": {
+      "x": -25,
+      "y": -25
+    },
+    "point4": {
+      "x": -30,
+      "y": -18
+    }
+  }
 ]
