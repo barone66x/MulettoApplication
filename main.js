@@ -29,7 +29,7 @@ let floors = [];
 let bobine = [];
 let floorPolygons = [];
 let bobinaPolygons = [];
-
+let oldBobinaColors =[];
 let rotationSpeed = 0.05;
 let translationSpeed = 0.25;
 const worldScale = 0.002;
@@ -56,8 +56,9 @@ scene.add(new Three.AmbientLight());
 floors = await loadJson(path1);
 bobine = await loadJson(path2);
 
-let currentArea;
-let currentBobina;
+let currentArea; //json area
+let currentBobina; //json bobina
+let currentBobinaModel; //modello 3d bobina
 
 let currentBobinaOffsetX;
 let currentBobinaOffsetY;
@@ -90,6 +91,7 @@ skyCamera.position.z = 0;
 skyCamera.lookAt(new Three.Vector3(0, 0, 0));
 
 const control = new ArcballControls(editCamera, renderer.domElement, scene);
+control.setGizmosVisible(false);
 let currentCamera = forkLiftCamera;
 //#endregion
 
@@ -137,14 +139,15 @@ container.appendChild(navbar);
 
 document.body.appendChild(container);
 
-const cameraBtn = addToNavbar("Cambio Camera", () => { changeCamera(); });
-const stressBtn = addToNavbar("Stress Test", () => { stressTest(); });
+const cameraBtn = addToNavbar("Cambio Camera", () => {
+  changeCamera();
+});
+const stressBtn = addToNavbar("Stress Test", () => {
+  stressTest();
+});
 
-const generateBtn = addToNavbar("Genera Bobina", () => { 
-  spawnBobina(5);
-  generateBtn.disabled = true;
-  loadBtn.disabled = true;
-  unloadBtn.disabled = false;
+const generateBtn = addToNavbar("Genera Bobina", () => {
+  showForm();
 });
 
 const unloadBtn = addToNavbar("Scarica Bobina", () => {
@@ -163,54 +166,81 @@ const loadBtn = addToNavbar("Carica Bobina", () => {
 addControls();
 
 function addControls() {
-
   const span = document.createElement("span");
-  span.className = "col-4"
+  span.className = "col-4";
 
   const controls = document.createElement("div");
-  controls.className = "col-12 col-md-5 col-lg-4 fixed-bottom px-4"
+  controls.className = "col-12 col-sm-3 fixed-bottom px-4 py-3";
   container.appendChild(controls);
 
   const controlsT = document.createElement("div");
-  controlsT.className = "row"
+  controlsT.className = "row";
   controls.appendChild(controlsT);
-  
+
   const controlsM = document.createElement("div");
-  controlsM.className = "row"
+  controlsM.className = "row";
   controls.appendChild(controlsM);
-  
+
   const controlsB = document.createElement("div");
-  controlsB.className = "row"
+  controlsB.className = "row";
   controls.appendChild(controlsB);
-  
+
   const downBtn = document.createElement("button");
-  downBtn.className = "col-4 py-2 m-0"
+  downBtn.className = "col-4 py-2 m-0";
   downBtn.appendChild(document.createTextNode("↓"));
+
   controlsB.appendChild(span);
   controlsB.appendChild(downBtn);
-  
+
   const upBtn = document.createElement("button");
-  upBtn.className = "col-4 py-2 m-0"
+  upBtn.className = "col-4 py-2 m-0";
   upBtn.appendChild(document.createTextNode("↑"));
   controlsT.appendChild(span.cloneNode());
   controlsT.appendChild(upBtn);
-  
+
   const leftBtn = document.createElement("button");
-  leftBtn.className = "col-4 py-2 m-0"
+  leftBtn.className = "col-4 py-2 m-0";
   leftBtn.appendChild(document.createTextNode("←"));
   controlsM.appendChild(leftBtn);
   controlsM.appendChild(span.cloneNode());
-  
+
   const rightBtn = document.createElement("button");
-  rightBtn.className = "col-4 py-2 m-0"
+  rightBtn.className = "col-4 py-2 m-0";
   rightBtn.appendChild(document.createTextNode("→"));
   controlsM.appendChild(rightBtn);
-  
+
+  upBtn.addEventListener("touchstart", () => {
+    inputMovement.movement = 1;
+  });
+  upBtn.addEventListener("touchend", () => {
+    inputMovement.movement -= (1 + inputMovement.movement) / 2;
+  });
+
+  downBtn.addEventListener("touchstart", () => {
+    inputMovement.movement = -1;
+  });
+  downBtn.addEventListener("touchend", () => {
+    inputMovement.movement += (1 - inputMovement.movement) / 2;
+  });
+
+  leftBtn.addEventListener("touchstart", () => {
+    inputMovement.rotation = 1;
+  });
+  leftBtn.addEventListener("touchend", () => {
+    inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
+  });
+
+  rightBtn.addEventListener("touchstart", () => {
+    inputMovement.rotation = -1;
+  });
+  rightBtn.addEventListener("touchend", () => {
+    inputMovement.rotation += (1 - inputMovement.rotation) / 2;
+  });
 }
 
 function addToNavbar(text, func) {
   const btn = document.createElement("button");
-  btn.className = "col m-1"
+  btn.className = "col m-1";
 
   const btnText = document.createTextNode(text);
   btn.appendChild(btnText);
@@ -221,42 +251,14 @@ function addToNavbar(text, func) {
   return btn;
 }
 
-// btnAddEventListener("forwardBtn", "touchstart", () => {
-//   inputMovement.movement = 1;
-// });
-// btnAddEventListener("forwardBtn", "touchend", () => {
-//   inputMovement.movement -= (1 + inputMovement.movement) / 2;
-// });
-
-// btnAddEventListener("backBtn", "touchstart", () => {
-//   inputMovement.movement = -1;
-// });
-// btnAddEventListener("backBtn", "touchend", () => {
-//   inputMovement.movement += (1 - inputMovement.movement) / 2;
-// });
-
-// btnAddEventListener("leftBtn", "touchstart", () => {
-//   inputMovement.rotation = 1;
-// });
-// btnAddEventListener("leftBtn", "touchend", () => {
-//   inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
-// });
-
-// btnAddEventListener("rightBtn", "touchstart", () => {
-//   inputMovement.rotation = -1;
-// });
-// btnAddEventListener("rightBtn", "touchend", () => {
-//   inputMovement.rotation += (1 - inputMovement.rotation) / 2;
-// });
-
 //#endregion
 
 //#region Creazione Label
-createLabel(10, 40, "floorLabel");
-let floorLabel = document.getElementById("floorLabel");
 
-createLabel(10, 80, "bobinaLabel");
-let bobinaLabel = document.getElementById("bobinaLabel");
+let floorLabel = addToInformation(""); 
+
+let bobinaLabel = addToInformation("");
+
 //#endregion
 
 //#region Generazione Elementi
@@ -287,7 +289,6 @@ unloadBtn.disabled = true;
 generateFloors();
 generateBobine();
 
-
 document.body.appendChild(renderer.domElement);
 
 //ANIMATE
@@ -299,6 +300,8 @@ function animate() {
   if (!isForkliftLoaded) {
     bobinaCollision();
   }
+
+  
 
   renderer.render(scene, currentCamera);
   requestAnimationFrame(animate);
@@ -350,15 +353,15 @@ function generateFloorsOld() {
 function generateFloors() {
   floors.forEach((floor) => {
     let floorShape = new Three.Shape();
-    floorShape.moveTo(floor.point1.x, floor.point1.y)
-    floorShape.lineTo(floor.point2.x, floor.point2.y)
-    floorShape.lineTo(floor.point3.x, floor.point3.y)
-    floorShape.lineTo(floor.point4.x, floor.point4.y)
-    floorShape.lineTo(floor.point1.x, floor.point1.y)
+    floorShape.moveTo(floor.point1.x, floor.point1.y);
+    floorShape.lineTo(floor.point2.x, floor.point2.y);
+    floorShape.lineTo(floor.point3.x, floor.point3.y);
+    floorShape.lineTo(floor.point4.x, floor.point4.y);
+    floorShape.lineTo(floor.point1.x, floor.point1.y);
     const floorGeometry = new Three.ShapeGeometry(floorShape);
     let newFloor = new Three.Mesh(
       floorGeometry,
-      new Three.MeshPhongMaterial({ side: Three.DoubleSide })
+      new Three.MeshPhongMaterial({ side: Three.DoubleSide, color: "#ff0000" })
     );
     newFloor.position.y = plane.position.y - 0.2;
     // console.log(floorShape);
@@ -455,24 +458,36 @@ function generateFloorPolygonOld(center, floor) {
   // helper.position.set(center.x, 0, center.y)
 }
 
-function generateFloorPolygon(floorJson){
-  const fakeCenter = new Point(floorJson.point1.x,floorJson.point1.y);
-  const polygon = new dc.Polygon(fakeCenter,[
-    new Point(floorJson.point1.x - fakeCenter.x, floorJson.point1.y - fakeCenter.y),
-    new Point(floorJson.point2.x - fakeCenter.x, floorJson.point2.y - fakeCenter.y),
-    new Point(floorJson.point3.x - fakeCenter.x, floorJson.point3.y - fakeCenter.y),
-    new Point(floorJson.point4.x - fakeCenter.x, floorJson.point4.y - fakeCenter.y)
+function generateFloorPolygon(floorJson) {
+  const fakeCenter = new Point(floorJson.point1.x, floorJson.point1.y);
+  const polygon = new dc.Polygon(fakeCenter, [
+    new Point(
+      floorJson.point1.x - fakeCenter.x,
+      floorJson.point1.y - fakeCenter.y
+    ),
+    new Point(
+      floorJson.point2.x - fakeCenter.x,
+      floorJson.point2.y - fakeCenter.y
+    ),
+    new Point(
+      floorJson.point3.x - fakeCenter.x,
+      floorJson.point3.y - fakeCenter.y
+    ),
+    new Point(
+      floorJson.point4.x - fakeCenter.x,
+      floorJson.point4.y - fakeCenter.y
+    ),
   ]);
   polygon.name = floorJson.id;
 
-  polygon.calcPoints.forEach((point) => {
-    const helper = new Three.Mesh(
-      new Three.BoxGeometry(0.5, 10, 0.5),
-      new Three.MeshNormalMaterial()
-    );
-    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
-    scene.add(helper);
-  });
+  // polygon.calcPoints.forEach((point) => {
+  //   const helper = new Three.Mesh(
+  //     new Three.BoxGeometry(0.5, 10, 0.5),
+  //     new Three.MeshNormalMaterial()
+  //   );
+  //   helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+  //   scene.add(helper);
+  // });
 
   // console.log(floorJson.point2.x - fakeCenter.x);
   // console.log(floorJson.point2.y - fakeCenter.y);
@@ -481,28 +496,41 @@ function generateFloorPolygon(floorJson){
 }
 
 function generateBobinaPolygon(center, bobina) {
-  const polygon = new dc.Polygon(center, [
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(0, bobina.base / 2),
-      bobina.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(0, -bobina.base / 2),
-      bobina.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(bobina.depth / 2, bobina.base / 2),
-      bobina.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(bobina.depth / 2, -bobina.base / 2),
-      bobina.rotation
-    ),
-  ]);
+  let polygon;
+
+  if (bobina.isStanding) {
+    let halfBase = bobina.base / 2;
+    let halfHeigth = bobina.height / 2;
+    polygon = new dc.Polygon(center, [
+      new Point(halfBase, halfHeigth),
+      new Point(-halfBase, halfHeigth),
+      new Point(halfBase, -halfHeigth),
+      new Point(-halfBase, -halfHeigth),
+    ]);
+  } else {
+    polygon = new dc.Polygon(center, [
+      rotateOnAxis(
+        new Point(0, 0),
+        new Point(0, bobina.base / 2),
+        bobina.rotation
+      ),
+      rotateOnAxis(
+        new Point(0, 0),
+        new Point(0, -bobina.base / 2),
+        bobina.rotation
+      ),
+      rotateOnAxis(
+        new Point(0, 0),
+        new Point(bobina.depth / 2, bobina.base / 2),
+        bobina.rotation
+      ),
+      rotateOnAxis(
+        new Point(0, 0),
+        new Point(bobina.depth / 2, -bobina.base / 2),
+        bobina.rotation
+      ),
+    ]);
+  }
 
   polygon.name = bobina.id;
   bobinaPolygons.push(polygon);
@@ -548,10 +576,25 @@ function floorCollision() {
 
 function bobinaCollision() {
   let trovato = false;
+  
   bobinaPolygons.forEach((bobina) => {
     if (isInArea(new Point(forkLift.position.x, forkLift.position.z), bobina)) {
       currentBobina = bobine.find((x) => x.id == bobina.name);
       trovato = true;
+      if (scene.getObjectByName(bobina.name) != currentBobinaModel )
+      {
+        
+      }
+      
+      currentBobinaModel = scene.children.find((figlio)=>figlio.name == bobina.name && figlio.children.length ==3);
+      // console.log(currentBobinaModel);
+      console.log(currentBobinaModel.children[1].material.color.setHex(0xffffff));
+      currentBobinaModel.children.forEach((x)=>{
+        oldBobinaColors.push(x.material.color.getHex());
+        x.material.color.setHex(0xffff00);
+        
+      })
+      
     }
   });
 
@@ -601,6 +644,7 @@ async function loadFbx(path) {
   return x;
 }
 
+//deprecato
 function createControllerButton() {
   const div = document.createElement("div");
 
@@ -654,6 +698,44 @@ function createControllerButton() {
   document.body.appendChild(div);
 }
 
+function showForm() {
+  const message = document.createElement("p");
+  const div = document.createElement("div");
+  const textArea = document.createElement("input");
+  const cancelBtn = document.createElement("button");
+  const sendBtn = document.createElement("button");
+  div.style.background = "rgb(233,233,233)";
+  cancelBtn.innerHTML = "Cancella";
+  sendBtn.innerHTML = "Invia";
+  div.className =
+    "position-absolute top-50 start-50 translate-middle p-3 rounded-1";
+  textArea.type = "text";
+  div.appendChild(textArea);
+  div.appendChild(sendBtn);
+  div.appendChild(cancelBtn);
+
+  generateBtn.disabled = true;
+
+  sendBtn.addEventListener("click", async () => {
+    console.log(typeof +textArea.value);
+    let text = await spawnBobina(textArea.value);
+
+    if (text) {
+      message.textContent = text;
+      div.appendChild(message);
+    } else {
+      unloadBtn.disabled = false;
+      document.body.removeChild(div);
+    }
+  });
+  cancelBtn.addEventListener("click", () => {
+    generateBtn.disabled = false;
+    document.body.removeChild(div);
+  });
+
+  document.body.appendChild(div);
+}
+
 function createLabel(left, top, id) {
   const div = document.createElement("div");
   const p = document.createElement("p");
@@ -665,6 +747,17 @@ function createLabel(left, top, id) {
   div.className = "contentDiv";
   div.appendChild(p);
   document.body.appendChild(div);
+}
+
+function addToInformation(text) {
+  const information = document.createElement("p");
+
+  information.textContent = text;
+
+  information.className = "row m-1";
+
+  container.appendChild(information);
+  return information;
 }
 
 function isInArea(point, area) {
@@ -690,12 +783,12 @@ function unloadForklift() {
 
   let rotation = new Three.Vector3();
   bobina.getWorldDirection(rotation);
-  
+
   rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x));
-  
+
   currentBobina.position = { x: bobina.position.x, y: bobina.position.z };
   currentBobina.rotation = rotation - 90;
-  
+
   currentBobina.floorId = currentArea.id ? currentArea.id : 0;
   generateBobinaPolygon(
     new Point(bobina.position.x, bobina.position.z),
@@ -703,7 +796,6 @@ function unloadForklift() {
   );
   bobine.push(currentBobina);
   isForkliftLoaded = false;
-
 }
 
 function loadForklift() {
@@ -719,6 +811,9 @@ function loadForklift() {
 
 async function spawnBobina(id) {
   let bobina = (await loadJson("bobineEsterne.json", "id", id))[0];
+  if (!bobina) {
+    return "La bobina non esiste nel database";
+  }
   let newBobina = await loadFbx(bobinaPath);
 
   newBobina.name = bobina.id;
@@ -744,6 +839,7 @@ async function spawnBobina(id) {
 
   currentBobina = bobina;
   changeBobinaLabel();
+  return;
 }
 
 //#endregion
