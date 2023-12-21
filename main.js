@@ -370,29 +370,6 @@ function generateFloors() {
   });
 }
 
-function generateFloors() {
-  floors.forEach((floor) => {
-    let floorShape = new Three.Shape();
-    floorShape.moveTo(floor.point1.x, floor.point1.y)
-    floorShape.lineTo(floor.point2.x, floor.point2.y)
-    floorShape.lineTo(floor.point3.x, floor.point3.y)
-    floorShape.lineTo(floor.point4.x, floor.point4.y)
-    floorShape.lineTo(floor.point1.x, floor.point1.y)
-    const floorGeometry = new Three.ShapeGeometry(floorShape);
-    let newFloor = new Three.Mesh(
-      floorGeometry,
-      new Three.MeshPhongMaterial({ side: Three.DoubleSide })
-    );
-    newFloor.position.y = plane.position.y - 0.2;
-    // console.log(floorShape);
-    scene.add(newFloor);
-    generateFloorPolygon(floor);
-    newFloor.name = floor.id;
-    // console.log(newFloor.position);
-    newFloor.rotation.x = Math.PI / 2;
-  });
-}
-
 async function generateBobine() {
   bobine = await loadJson(path2);
   bobine.forEach(async (f) => {
