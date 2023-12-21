@@ -21,7 +21,6 @@ const inputMovement = {
   rotation: 0,
 };
 
-let mulettoRotationTest;
 let path1 = "./floor.json";
 let path2 = "./bobine.json";
 let forkliftPath = "./models/Forklift.fbx";
@@ -95,69 +94,160 @@ let currentCamera = forkLiftCamera;
 //#endregion
 
 //#region Creazione Bottoni
-createButton("cameraBtn", 10, 10, "Cambia Camera", () => {
-  changeCamera();
-});
+// createButton("cameraBtn", 10, 10, "Cambia Camera", () => {
+//   changeCamera();
+// });
 
-createButton("stressBtn", 120, 10, "Stress Test", () => {
-  stressTest();
-});
+// createButton("stressBtn", 120, 10, "Stress Test", () => {
+//   stressTest();
+// });
 
-createButton("generateBtn", 199, 10, "Genera Bobina", () => {
+// createButton("generateBtn", 199, 10, "Genera Bobina", () => {
+//   spawnBobina(5);
+//   generateBtn.disabled = true;
+//   loadBtn.disabled = true;
+//   unloadBtn.disabled = false;
+// });
+
+// createButton("unloadBtn", 302, 10, "Scarica Bobina", () => {
+//   unloadForklift();
+//   unloadBtn.disabled = true;
+//   generateBtn.disabled = false;
+// });
+
+// createButton("loadBtn", 405, 10, "Carica Bobina", () => {
+//   loadForklift();
+//   loadBtn.disabled = true;
+//   generateBtn.disabled = true;
+//   unloadBtn.disabled = false;
+// });
+
+// createButton("forwardBtn", 50, 150, "↑", () => {});
+// createButton("backBtn", 50, 210, "↓", () => {});
+// createButton("leftBtn", 20, 180, "←", () => {});
+// createButton("rightBtn", 73, 180, "→", () => {});
+
+const container = document.createElement("div");
+container.className = "container-fluid contentDiv";
+
+const navbar = document.createElement("div");
+navbar.className = "row p-1";
+
+container.appendChild(navbar);
+
+document.body.appendChild(container);
+
+const cameraBtn = addToNavbar("Cambio Camera", () => { changeCamera(); });
+const stressBtn = addToNavbar("Stress Test", () => { stressTest(); });
+
+const generateBtn = addToNavbar("Genera Bobina", () => { 
   spawnBobina(5);
   generateBtn.disabled = true;
   loadBtn.disabled = true;
   unloadBtn.disabled = false;
 });
 
-createButton("unloadBtn", 302, 10, "Scarica Bobina", () => {
+const unloadBtn = addToNavbar("Scarica Bobina", () => {
   unloadForklift();
   unloadBtn.disabled = true;
   generateBtn.disabled = false;
 });
 
-createButton("loadBtn", 405, 10, "Carica Bobina", () => {
+const loadBtn = addToNavbar("Carica Bobina", () => {
   loadForklift();
   loadBtn.disabled = true;
   generateBtn.disabled = true;
   unloadBtn.disabled = false;
 });
 
-createButton("forwardBtn", 50, 150, "↑", () => {});
-createButton("backBtn", 50, 210, "↓", () => {});
-createButton("leftBtn", 20, 180, "←", () => {});
-createButton("rightBtn", 73, 180, "→", () => {});
+addControls();
 
-//versione css dei tasti direzionali
-// createControllerButton();
+function addControls() {
 
-btnAddEventListener("forwardBtn", "touchstart", () => {
-  inputMovement.movement = 1;
-});
-btnAddEventListener("forwardBtn", "touchend", () => {
-  inputMovement.movement -= (1 + inputMovement.movement) / 2;
-});
+  const span = document.createElement("span");
+  span.className = "col-4"
 
-btnAddEventListener("backBtn", "touchstart", () => {
-  inputMovement.movement = -1;
-});
-btnAddEventListener("backBtn", "touchend", () => {
-  inputMovement.movement += (1 - inputMovement.movement) / 2;
-});
+  const controls = document.createElement("div");
+  controls.className = "col-12 col-md-5 col-lg-4 fixed-bottom px-4"
+  container.appendChild(controls);
 
-btnAddEventListener("leftBtn", "touchstart", () => {
-  inputMovement.rotation = 1;
-});
-btnAddEventListener("leftBtn", "touchend", () => {
-  inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
-});
+  const controlsT = document.createElement("div");
+  controlsT.className = "row"
+  controls.appendChild(controlsT);
+  
+  const controlsM = document.createElement("div");
+  controlsM.className = "row"
+  controls.appendChild(controlsM);
+  
+  const controlsB = document.createElement("div");
+  controlsB.className = "row"
+  controls.appendChild(controlsB);
+  
+  const downBtn = document.createElement("button");
+  downBtn.className = "col-4 py-2 m-0"
+  downBtn.appendChild(document.createTextNode("↓"));
+  controlsB.appendChild(span);
+  controlsB.appendChild(downBtn);
+  
+  const upBtn = document.createElement("button");
+  upBtn.className = "col-4 py-2 m-0"
+  upBtn.appendChild(document.createTextNode("↑"));
+  controlsT.appendChild(span.cloneNode());
+  controlsT.appendChild(upBtn);
+  
+  const leftBtn = document.createElement("button");
+  leftBtn.className = "col-4 py-2 m-0"
+  leftBtn.appendChild(document.createTextNode("←"));
+  controlsM.appendChild(leftBtn);
+  controlsM.appendChild(span.cloneNode());
+  
+  const rightBtn = document.createElement("button");
+  rightBtn.className = "col-4 py-2 m-0"
+  rightBtn.appendChild(document.createTextNode("→"));
+  controlsM.appendChild(rightBtn);
+  
+}
 
-btnAddEventListener("rightBtn", "touchstart", () => {
-  inputMovement.rotation = -1;
-});
-btnAddEventListener("rightBtn", "touchend", () => {
-  inputMovement.rotation += (1 - inputMovement.rotation) / 2;
-});
+function addToNavbar(text, func) {
+  const btn = document.createElement("button");
+  btn.className = "col m-1"
+
+  const btnText = document.createTextNode(text);
+  btn.appendChild(btnText);
+
+  btn.addEventListener("click", func);
+
+  navbar.appendChild(btn);
+  return btn;
+}
+
+// btnAddEventListener("forwardBtn", "touchstart", () => {
+//   inputMovement.movement = 1;
+// });
+// btnAddEventListener("forwardBtn", "touchend", () => {
+//   inputMovement.movement -= (1 + inputMovement.movement) / 2;
+// });
+
+// btnAddEventListener("backBtn", "touchstart", () => {
+//   inputMovement.movement = -1;
+// });
+// btnAddEventListener("backBtn", "touchend", () => {
+//   inputMovement.movement += (1 - inputMovement.movement) / 2;
+// });
+
+// btnAddEventListener("leftBtn", "touchstart", () => {
+//   inputMovement.rotation = 1;
+// });
+// btnAddEventListener("leftBtn", "touchend", () => {
+//   inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
+// });
+
+// btnAddEventListener("rightBtn", "touchstart", () => {
+//   inputMovement.rotation = -1;
+// });
+// btnAddEventListener("rightBtn", "touchend", () => {
+//   inputMovement.rotation += (1 - inputMovement.rotation) / 2;
+// });
 
 //#endregion
 
@@ -178,18 +268,6 @@ const plane = new Three.Mesh(
 plane.rotation.x = Math.PI / 2;
 scene.add(plane);
 
-// const box = new Three.Mesh(
-//   new Three.BoxGeometry(1, 1, 1),
-//   new Three.MeshBasicMaterial({ color: "#ff0000" })
-// );
-// box.position.y -= 1;
-// box.position.z = 0;
-// box.position.x = 10;
-// box.name = "box1";
-// const boxB = new Three.Box3();
-// boxB.int
-// scene.add(box);
-
 const forkLiftScale = 2;
 
 const forkLift = await loadFbx(forkliftPath);
@@ -203,12 +281,7 @@ forkLift.add(skyCamera);
 
 //inizialmente disabilito il bottone del carica/scarica bobina
 
-let generateBtn = document.getElementById("generateBtn");
-
-let loadBtn = document.getElementById("loadBtn");
 loadBtn.disabled = true;
-
-let unloadBtn = document.getElementById("unloadBtn");
 unloadBtn.disabled = true;
 
 generateFloors();
@@ -256,15 +329,6 @@ function generateFloorsOld() {
 
     floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
-    // floor.position.x
-    //   (x - f.position.x) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) -
-    //   (z - f.position.y) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
-    //   f.position.x;
-
-    // floor.position.z =
-    //   (x - f.position.x) * Math.sin(Three.MathUtils.degToRad(-f.rotation)) +
-    //   (z - f.position.y) * Math.cos(Three.MathUtils.degToRad(-f.rotation)) +
-    //   f.position.y;
     let newCenter = rotateOnAxis(
       f.position,
       new Point(floor.position.x, floor.position.z),
@@ -280,6 +344,29 @@ function generateFloorsOld() {
 
     generateFloorPolygon(newCenter, f);
     // scene.add(cyl);
+  });
+}
+
+function generateFloors() {
+  floors.forEach((floor) => {
+    let floorShape = new Three.Shape();
+    floorShape.moveTo(floor.point1.x, floor.point1.y)
+    floorShape.lineTo(floor.point2.x, floor.point2.y)
+    floorShape.lineTo(floor.point3.x, floor.point3.y)
+    floorShape.lineTo(floor.point4.x, floor.point4.y)
+    floorShape.lineTo(floor.point1.x, floor.point1.y)
+    const floorGeometry = new Three.ShapeGeometry(floorShape);
+    let newFloor = new Three.Mesh(
+      floorGeometry,
+      new Three.MeshPhongMaterial({ side: Three.DoubleSide })
+    );
+    newFloor.position.y = plane.position.y - 0.2;
+    // console.log(floorShape);
+    scene.add(newFloor);
+    generateFloorPolygon(floor);
+    newFloor.name = floor.id;
+    // console.log(newFloor.position);
+    newFloor.rotation.x = Math.PI / 2;
   });
 }
 
@@ -345,7 +432,6 @@ function rotateOnAxis(rotationAxis, point, rotationAngle) {
   let x = point.x;
   let y = point.y;
   let newPoint = {};
-  // floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
   newPoint.x =
     (x - rotationAxis.x) * Math.cos(Three.MathUtils.degToRad(-rotationAngle)) -
@@ -538,23 +624,6 @@ async function loadFbx(path) {
   return x;
 }
 
-function createButton(id, left, top, text, func) {
-  const div = document.createElement("div");
-  const btn = document.createElement("button");
-  const btnText = document.createTextNode(text);
-
-  div.style.left = left + "px";
-  div.style.top = top + "px";
-  btn.setAttribute("id", id);
-  div.className = "contentDiv";
-  btn.addEventListener("click", func);
-
-  btn.appendChild(btnText);
-  div.appendChild(btn);
-
-  document.body.appendChild(div);
-}
-
 function createControllerButton() {
   const div = document.createElement("div");
 
@@ -608,11 +677,6 @@ function createControllerButton() {
   document.body.appendChild(div);
 }
 
-function btnAddEventListener(btnId, event, func) {
-  let btn = document.getElementById(btnId);
-  btn.addEventListener(event, func);
-}
-
 function createLabel(left, top, id) {
   const div = document.createElement("div");
   const p = document.createElement("p");
@@ -643,21 +707,26 @@ function changeCamera() {
 //#region interazione bobine
 
 function unloadForklift() {
-  let bobina = forkLift.children.pop();
+  let bobina = forkLift.children[forkLift.children.length - 1];
+
   scene.attach(bobina);
 
+  let rotation = new Three.Vector3();
+  bobina.getWorldDirection(rotation);
+  
+  rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x));
+  
   currentBobina.position = { x: bobina.position.x, y: bobina.position.z };
-  console.log(Three.MathUtils.radToDeg(bobina.rotation.y));
-  currentBobina.rotation = Three.MathUtils.radToDeg(bobina.rotation.y);
-
+  currentBobina.rotation = rotation - 90;
+  
   currentBobina.floorId = currentArea.id ? currentArea.id : 0;
-
   generateBobinaPolygon(
     new Point(bobina.position.x, bobina.position.z),
     currentBobina
   );
   bobine.push(currentBobina);
   isForkliftLoaded = false;
+
 }
 
 function loadForklift() {
@@ -687,8 +756,6 @@ async function spawnBobina(id) {
     bobina.depth / forkLiftScale / 2 - (0.02 * bobina.depth) / forkLiftScale;
   currentBobinaOffsetY = -(2 + bobina.base / forkLiftScale / 2 / 0.642);
 
-  // console.log(currentBobinaOffsetX)
-
   newBobina.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
   newBobina.position.y =
     -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) /
@@ -696,7 +763,6 @@ async function spawnBobina(id) {
   newBobina.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
 
   forkLift.add(newBobina);
-  console.log(newBobina);
   isForkliftLoaded = true;
 
   currentBobina = bobina;
@@ -771,9 +837,7 @@ async function stressTest() {
   bobina.scale.multiplyScalar(worldScale);
   for (let i = 0; i < 50; i++) {
     for (let j = 0; j < 50; j++) {
-      // const bobina = new Three.Mesh(new Three.BoxGeometry(1,1,1), new Three.MeshBasicMaterial({ color: "#ff0000" }))
       const x = bobina.clone();
-      // x.scale.multiplyScalar(j % 50)
       x.position.x = i;
       x.position.z = j;
       x.position.y = -2;
