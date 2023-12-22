@@ -29,7 +29,7 @@ let floors = [];
 let bobine = [];
 let floorPolygons = [];
 let bobinaPolygons = [];
-let oldBobinaColors =[];
+let oldBobinaColors = [];
 let rotationSpeed = 0.05;
 let translationSpeed = 0.25;
 const worldScale = 0.002;
@@ -255,7 +255,7 @@ function addToNavbar(text, func) {
 
 //#region Creazione Label
 
-let floorLabel = addToInformation(""); 
+let floorLabel = addToInformation("");
 
 let bobinaLabel = addToInformation("");
 
@@ -279,6 +279,36 @@ forkLift.scale.multiplyScalar(worldScale * forkLiftScale);
 forkLift.rotation.z = Math.PI;
 forkLift.add(forkLiftCamera);
 forkLift.add(skyCamera);
+const forkCollisionBoxPoints = [
+  new Point(-1.3, 3.2),
+  new Point(1.3, 3.2),
+  new Point(1, 0.7),
+  new Point(-1, 0.7)
+];
+
+// const forkLiftCollisionSphere = new Three.Mesh(new Three.SphereGeometry(0.2), new Three.MeshNormalMaterial());
+// forkLiftCollisionSphere.material.transparent = true;
+// forkLiftCollisionSphere.material.opacity = 0.5;
+// forkLiftCollisionSphere.scale.divideScalar(worldScale);
+// forkLift.add(forkLiftCollisionSphere);
+// forkLiftCollisionSphere.position.z = -2.4 / worldScale;
+// forkLiftCollisionSphere.position.y = -2 / worldScale;
+const forkShape = new Three.Shape();
+forkShape.moveTo(forkCollisionBoxPoints[0].x - forkCollisionBoxPoints[0].x, forkCollisionBoxPoints[0].y - forkCollisionBoxPoints[0].y);
+forkShape.lineTo(forkCollisionBoxPoints[1].x - forkCollisionBoxPoints[0].x, forkCollisionBoxPoints[1].y - forkCollisionBoxPoints[0].y);
+forkShape.lineTo(forkCollisionBoxPoints[2].x - forkCollisionBoxPoints[0].x, forkCollisionBoxPoints[2].y - forkCollisionBoxPoints[0].y);
+forkShape.lineTo(forkCollisionBoxPoints[3].x - forkCollisionBoxPoints[0].x, forkCollisionBoxPoints[3].y - forkCollisionBoxPoints[0].y);
+forkShape.lineTo(forkCollisionBoxPoints[0].x - forkCollisionBoxPoints[0].x, forkCollisionBoxPoints[0].y - forkCollisionBoxPoints[0].y);
+
+const forkCollisionBox = new Three.Mesh(new Three.ShapeGeometry(forkShape), new Three.MeshPhongMaterial({side:Three.DoubleSide, color: "#ff0000"}))
+forkLift.add(forkCollisionBox);
+forkCollisionBox.scale.divideScalar(worldScale);
+forkCollisionBox.rotation.x = -Math.PI/2;
+forkCollisionBox.position.y -=2.2 / worldScale;
+
+forkCollisionBox.position.x = (forkCollisionBoxPoints[0].x) / worldScale;
+forkCollisionBox.position.z = -(forkCollisionBoxPoints[0].y) / worldScale;
+
 // #endregion
 
 //inizialmente disabilito il bottone del carica/scarica bobina
@@ -298,10 +328,20 @@ function animate() {
 
   floorCollision();
   if (!isForkliftLoaded) {
-    bobinaCollision();
-  }
 
-  
+    if (!bobinaCollision())
+    {
+
+      if(currentBobinaModel)
+      {
+        currentBobinaModel.children[0].material.color.copy(oldBobinaColors[0]);
+        currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
+        currentBobinaModel = null;
+        oldBobinaColors = [];
+      }
+      
+    }
+  }
 
   renderer.render(scene, currentCamera);
   requestAnimationFrame(animate);
@@ -559,7 +599,7 @@ function removePolygon(position) {
 function floorCollision() {
   let trovato = false;
   floorPolygons.forEach((area) => {
-    if (isInArea(new Point(forkLift.position.x, forkLift.position.z), area)) {
+    if (pointInPolygon(new Point(forkLift.position.x, forkLift.position.z), area)) {
       currentArea = floors.find((x) => x.id == area.name);
       trovato = true;
     }
@@ -577,24 +617,44 @@ function floorCollision() {
 function bobinaCollision() {
   let trovato = false;
   
+
   bobinaPolygons.forEach((bobina) => {
-    if (isInArea(new Point(forkLift.position.x, forkLift.position.z), bobina)) {
+    if (isInArea(bobina)) {
       currentBobina = bobine.find((x) => x.id == bobina.name);
       trovato = true;
-      if (scene.getObjectByName(bobina.name) != currentBobinaModel )
-      {
+      const collidedBobinaModel = scene.children.find(
+        (figlio) => figlio.name == bobina.name && figlio.children.length == 3
+      );
+      if (collidedBobinaModel != currentBobinaModel) {
         
+
+        if (currentBobinaModel) {
+          // currentBobinaModel.children.forEach((figlio) => {
+          //   console.log(oldBobinaColors);
+          //   figlio.material.color.copy(oldBobinaColors[0]);
+            
+          //   oldBobinaColors = oldBobinaColors.slice(0, -1);
+          // });
+          currentBobinaModel.children[0].material.color.copy(oldBobinaColors[0]);
+          currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
+          currentBobinaModel = null;
+          oldBobinaColors = [];
+          
+        }
+
+        currentBobinaModel = scene.children.find(
+          (figlio) => figlio.name == bobina.name && figlio.children.length == 3
+        );
+
+        currentBobinaModel.children.forEach((x) => {
+          oldBobinaColors.push(x.material.color.clone());
+          
+          x.material.color.setHex(0xffff00);
+
+          
+          
+        });
       }
-      
-      currentBobinaModel = scene.children.find((figlio)=>figlio.name == bobina.name && figlio.children.length ==3);
-      // console.log(currentBobinaModel);
-      console.log(currentBobinaModel.children[1].material.color.setHex(0xffffff));
-      currentBobinaModel.children.forEach((x)=>{
-        oldBobinaColors.push(x.material.color.getHex());
-        x.material.color.setHex(0xffff00);
-        
-      })
-      
     }
   });
 
@@ -606,6 +666,7 @@ function bobinaCollision() {
     bobinaLabel.innerHTML = "";
     loadBtn.disabled = true;
   }
+  return trovato;
 }
 
 function changeBobinaLabel() {
@@ -760,8 +821,32 @@ function addToInformation(text) {
   return information;
 }
 
-function isInArea(point, area) {
-  return pointInPolygon(point, area);
+const pilastro = new Three.Mesh(new Three.BoxGeometry(0.5,10,0.5), new Three.MeshNormalMaterial());
+forkCollisionBox.getWorldPosition(pilastro.position);
+scene.add(pilastro);
+
+isInArea()
+
+function isInArea( area) {
+  let fakeCenter = new Three.Vector3();
+  forkCollisionBox.getWorldPosition(fakeCenter);
+  
+  fakeCenter = new Point(fakeCenter.x,fakeCenter.z);
+
+  let forkArea = new dc.Polygon(fakeCenter,[
+    rotateOnAxis(new Point(forkLift.position.x, forkLift.position.z), new Point((forkCollisionBoxPoints[0].x - forkCollisionBoxPoints[0].x) * forkLiftScale, (forkCollisionBoxPoints[0].y - forkCollisionBoxPoints[0].y) * forkLiftScale), -forkLift.rotation.y),
+  ]);
+
+  forkArea.calcPoints.forEach((point) => {
+    const helper = new Three.Mesh(
+      new Three.BoxGeometry(0.5, 10, 0.5),
+      new Three.MeshNormalMaterial()
+    );
+    helper.position.set(forkArea.pos.x + point.x, 0, forkArea.pos.y + point.y);
+    scene.add(helper);
+  });
+
+  // return dc.polygonInPolygon(forkArea, area)
 }
 
 function changeCamera() {
@@ -823,11 +908,10 @@ async function spawnBobina(id) {
     bobina.height / forkLiftScale
   );
   newBobina.rotation.z = Math.PI / 2;
+  newBobina.rotation.y = -Math.PI / 2;
 
-  currentBobinaOffsetX =
-    bobina.depth / forkLiftScale / 2 - (0.02 * bobina.depth) / forkLiftScale;
-  currentBobinaOffsetY = -(2 + bobina.base / forkLiftScale / 2 / 0.642);
-
+  currentBobinaOffsetX =0;
+  currentBobinaOffsetY = -2;
   newBobina.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
   newBobina.position.y =
     -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) /
