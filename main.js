@@ -821,32 +821,32 @@ function addToInformation(text) {
   return information;
 }
 
-const pilastro = new Three.Mesh(new Three.BoxGeometry(0.5,10,0.5), new Three.MeshNormalMaterial());
-forkCollisionBox.getWorldPosition(pilastro.position);
-scene.add(pilastro);
-
-isInArea()
-
-function isInArea( area) {
+function isInArea(area) {
   let fakeCenter = new Three.Vector3();
   forkCollisionBox.getWorldPosition(fakeCenter);
   
   fakeCenter = new Point(fakeCenter.x,fakeCenter.z);
 
-  let forkArea = new dc.Polygon(fakeCenter,[
-    rotateOnAxis(new Point(forkLift.position.x, forkLift.position.z), new Point((forkCollisionBoxPoints[0].x - forkCollisionBoxPoints[0].x) * forkLiftScale, (forkCollisionBoxPoints[0].y - forkCollisionBoxPoints[0].y) * forkLiftScale), -forkLift.rotation.y),
+
+  console.log(forkLift.rotation.y);
+  let forkArea = new dc.Polygon(new Point(forkLift.position.x, forkLift.position.z),[
+    rotateOnAxis(new Point(0, 0), new Point((forkCollisionBoxPoints[0].x) * forkLiftScale, -(forkCollisionBoxPoints[0].y) * forkLiftScale), Three.MathUtils.radToDeg(forkLift.rotation.y)),
+    rotateOnAxis(new Point(0, 0), new Point((forkCollisionBoxPoints[1].x) * forkLiftScale, -(forkCollisionBoxPoints[1].y) * forkLiftScale), Three.MathUtils.radToDeg(forkLift.rotation.y)),
+    rotateOnAxis(new Point(0, 0), new Point((forkCollisionBoxPoints[2].x) * forkLiftScale, -(forkCollisionBoxPoints[2].y) * forkLiftScale), Three.MathUtils.radToDeg(forkLift.rotation.y)),
+    rotateOnAxis(new Point(0, 0), new Point((forkCollisionBoxPoints[3].x) * forkLiftScale, -(forkCollisionBoxPoints[3].y) * forkLiftScale), Three.MathUtils.radToDeg(forkLift.rotation.y)),
   ]);
 
-  forkArea.calcPoints.forEach((point) => {
-    const helper = new Three.Mesh(
-      new Three.BoxGeometry(0.5, 10, 0.5),
-      new Three.MeshNormalMaterial()
-    );
-    helper.position.set(forkArea.pos.x + point.x, 0, forkArea.pos.y + point.y);
-    scene.add(helper);
-  });
+  // forkArea.calcPoints.forEach((point) => {
+  //   const helper = new Three.Mesh(
+  //     new Three.BoxGeometry(0.5, 10, 0.5),
+  //     new Three.MeshNormalMaterial()
+  //   );
+  //   helper.position.set(forkArea.pos.x + point.x, 0, forkArea.pos.y + point.y);
+  //   scene.add(helper);
+  // });
 
-  // return dc.polygonInPolygon(forkArea, area)
+  console.log(dc.polygonInPolygon(forkArea, area));
+  return dc.polygonInPolygon(forkArea, area)
 }
 
 function changeCamera() {
