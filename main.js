@@ -16,20 +16,37 @@ class Point {
   }
 }
 
+class Mission{
+  id;
+  bobine;
+  destinationArea;
+  constructor(id,bobine,destinationArea){
+    this.id = id;
+    this.bobine = bobine;
+    this.destinationArea = destinationArea;
+  }
+}
+
 const inputMovement = {
   movement: 0,
   rotation: 0,
 };
 
-let path1 = "./floor.json";
-let path2 = "./bobine.json";
+let floorsJsonPath = "./floor.json";
+let bobineJsonPath = "./bobine.json";
+let missionsJsonPath = "./missions.json";
+
 let forkliftPath = "./models/Forklift.fbx";
 let bobinaPath = "./models/bobina2.fbx";
+let arrowPath = "./models/arrow.fbx";
 let floors = [];
 let bobine = [];
+let missions = [];
 let floorPolygons = [];
 let bobinaPolygons = [];
 let oldBobinaColors = [];
+
+let currentMission;
 let rotationSpeed = 0.05;
 let translationSpeed = 0.35;
 const worldScale = 0.002;
@@ -51,8 +68,9 @@ scene.rotation.z = Math.PI;
 scene.background = new Three.Color(0x95ecfc);
 scene.add(new Three.AmbientLight());
 
-floors = await loadJson(path1);
-bobine = await loadJson(path2);
+floors = await loadJson(floorsJsonPath);
+bobine = await loadJson(bobineJsonPath);
+missions = await loadJson(missionsJsonPath);
 
 let currentArea; //json area
 let currentBobina; //json bobina
@@ -80,7 +98,7 @@ const skyCamera = new Three.PerspectiveCamera(
 forkLiftCamera.position.z -= 0.5 / worldScale;
 forkLiftCamera.position.y -= 0.75 / worldScale;
 
-skyCamera.position.x = 0;
+skyCamera.position.x = 0 / worldScale;
 skyCamera.position.y = 10 / worldScale;
 skyCamera.position.z = 0;
 skyCamera.lookAt(new Three.Vector3(0, 0, 0));
@@ -88,6 +106,7 @@ skyCamera.lookAt(new Three.Vector3(0, 0, 0));
 let currentCamera = forkLiftCamera;
 //#endregion
 
+//#region  Gui
 const container = document.createElement("div");
 container.className = "container-fluid contentDiv";
 
@@ -96,13 +115,13 @@ navbar.className = "row p-1";
 container.appendChild(navbar);
 
 const informationDiv = document.createElement("div");
-informationDiv.className = "d-flex align-items-end flex-column"
+informationDiv.className = "d-flex align-items-end flex-column";
 container.appendChild(informationDiv);
 
 const informationRows = document.createElement("div");
-informationRows.className = "d-flex align-items-start flex-column bg-dark rounded-1 bg-opacity-75"
-informationDiv.appendChild(informationRows)
-
+informationRows.className =
+  "d-flex align-items-start flex-column bg-dark rounded-1 bg-opacity-75";
+informationDiv.appendChild(informationRows);
 
 document.body.appendChild(container);
 
@@ -129,6 +148,12 @@ const loadBtn = addToNavbar("Load Fork", () => {
   generateBtn.disabled = true;
   unloadBtn.disabled = false;
 });
+
+const missionBtn = addToNavbar("Start first mission", () =>{
+  currentMission = missions[1];
+  currentTarget = scene.children.find(x => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
+  arrow.visible = true;
+})
 
 addControls();
 
@@ -312,13 +337,40 @@ forkCollisionBox.position.z = -forkCollisionBoxPoints[0].y / worldScale;
 loadBtn.disabled = true;
 unloadBtn.disabled = true;
 
+
 generateFloors();
 generateBobine();
 
 document.body.appendChild(renderer.domElement);
 
+let currentTarget = forkLift.position;
+
+let arrow = await loadFbx(arrowPath);
+arrow.name = "freccia";
+arrow.visible = false;
+
+arrow.scale.multiplyScalar(worldScale);
+arrow.scale.multiplyScalar(7);
+arrow.scale.z /= 1.3;
+
+arrow.position.x = -4;
+arrow.position.y = -1.3;
+arrow.position.z = -5;
+
+arrow.rotation.order = "YXZ";
+
+scene.add(arrow);
+forkLift.attach(arrow);
+
+
+
 //ANIMATE;
 function animate() {
+
+  arrow.lookAt(currentTarget.clone().multiply(new Three.Vector3(-1, 1, 1)));
+  arrow.rotation.x = 0;
+  arrow.rotation.z = 0;
+
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
   forkLift.translateZ(-inputMovement.movement * translationSpeed);
 
@@ -382,7 +434,7 @@ function generateFloorsOld() {
 }
 
 function generateFloors() {
-  let texture = new Three.TextureLoader().load('textures/Green3_280.png');
+  let texture = new Three.TextureLoader().load("textures/Green3_280.png");
   texture.wrapS = Three.RepeatWrapping;
   texture.wrapT = Three.RepeatWrapping;
   texture.repeat.set(0.3, 0.3);
@@ -404,13 +456,13 @@ function generateFloors() {
     scene.add(newFloor);
     generateFloorPolygon(floor);
     newFloor.name = floor.id;
+    newFloor.tipo = "floor";
     // console.log(newFloor.position);
     newFloor.rotation.x = Math.PI / 2;
   });
 }
 
 async function generateBobine() {
-  bobine = await loadJson(path2);
   bobine.forEach(async (f) => {
     const bobina = await loadFbx(bobinaPath);
     let newCenter = new Point(f.position.x, f.position.y);
@@ -441,6 +493,7 @@ async function generateBobine() {
       bobina.position.y = -(f.base / 2 - 0.1 * f.base);
     }
     generateBobinaPolygon(newCenter, f);
+    
     scene.add(bobina);
   });
 }
@@ -679,7 +732,7 @@ function bobinaCollision() {
           oldBobinaColors = [];
         }
 
-        console.log(scene.children);
+        
         currentBobinaModel = scene.children.find(
           (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
         );
@@ -856,7 +909,7 @@ function addToInformation(text) {
 
   information.className = "text-light mx-1 my-0";
 
-  informationRows.appendChild(information)
+  informationRows.appendChild(information);
 
   return information;
 }
@@ -948,6 +1001,21 @@ function unloadForklift() {
   );
   bobine.push(currentBobina);
   isForkliftLoaded = false;
+  if (currentArea.id == currentMission.destinationArea && bobina.name == currentMission.bobine[0])
+  {
+    currentMission.bobine.shift();
+    if (currentMission.bobine.length == 0)
+    {
+      currentMission = undefined;
+      currentTarget = forkLift.position;
+      arrow.visible = false;
+    }
+    
+    
+    
+  }
+
+  currentTarget = scene.children.find(x => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
 }
 
 function loadForklift() {
@@ -963,6 +1031,18 @@ function loadForklift() {
   removePolygon();
   backToNormalColor();
   isForkliftLoaded = true;
+  
+  if(currentMission){
+    if(currentMission.bobine.find(x => x == newBobina.name)){
+      currentTarget = scene.children.find(x => 
+        x.name == currentMission.destinationArea && x.tipo == "floor").geometry.boundingSphere.center;
+      currentTarget = new Three.Vector3(currentTarget.x,0,currentTarget.y);
+      // console.log(currentTarget);
+      // currentTarget = scene.children.find(x => x.name == currentMission.destinationArea && x.tipo == "floor").position;
+
+    }
+      
+  }
 }
 
 async function spawnBobina(id) {
