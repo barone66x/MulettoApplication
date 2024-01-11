@@ -48,7 +48,7 @@ renderer.setSize(res.width, res.height);
 
 const scene = new Three.Scene();
 scene.rotation.z = Math.PI;
-scene.background = new Three.Color(0xffffff);
+scene.background = new Three.Color(0x95ecfc);
 scene.add(new Three.AmbientLight());
 
 floors = await loadJson(path1);
@@ -88,68 +88,42 @@ skyCamera.lookAt(new Three.Vector3(0, 0, 0));
 let currentCamera = forkLiftCamera;
 //#endregion
 
-//#region Creazione Bottoni
-// createButton("cameraBtn", 10, 10, "Cambia Camera", () => {
-//   changeCamera();
-// });
-
-// createButton("stressBtn", 120, 10, "Stress Test", () => {
-//   stressTest();
-// });
-
-// createButton("generateBtn", 199, 10, "Genera Bobina", () => {
-//   spawnBobina(5);
-//   generateBtn.disabled = true;
-//   loadBtn.disabled = true;
-//   unloadBtn.disabled = false;
-// });
-
-// createButton("unloadBtn", 302, 10, "Scarica Bobina", () => {
-//   unloadForklift();
-//   unloadBtn.disabled = true;
-//   generateBtn.disabled = false;
-// });
-
-// createButton("loadBtn", 405, 10, "Carica Bobina", () => {
-//   loadForklift();
-//   loadBtn.disabled = true;
-//   generateBtn.disabled = true;
-//   unloadBtn.disabled = false;
-// });
-
-// createButton("forwardBtn", 50, 150, "↑", () => {});
-// createButton("backBtn", 50, 210, "↓", () => {});
-// createButton("leftBtn", 20, 180, "←", () => {});
-// createButton("rightBtn", 73, 180, "→", () => {});
-
 const container = document.createElement("div");
 container.className = "container-fluid contentDiv";
 
 const navbar = document.createElement("div");
 navbar.className = "row p-1";
-
 container.appendChild(navbar);
+
+const informationDiv = document.createElement("div");
+informationDiv.className = "d-flex align-items-end flex-column"
+container.appendChild(informationDiv);
+
+const informationRows = document.createElement("div");
+informationRows.className = "d-flex align-items-start flex-column bg-dark rounded-1 bg-opacity-75"
+informationDiv.appendChild(informationRows)
+
 
 document.body.appendChild(container);
 
-const cameraBtn = addToNavbar("Cambio Camera", () => {
+const cameraBtn = addToNavbar("Change Camera", () => {
   changeCamera();
 });
 const stressBtn = addToNavbar("Stress Test", () => {
   stressTest();
 });
 
-const generateBtn = addToNavbar("Genera Bobina", () => {
+const generateBtn = addToNavbar("Generate Coil", () => {
   showForm();
 });
 
-const unloadBtn = addToNavbar("Scarica Bobina", () => {
+const unloadBtn = addToNavbar("Unload Fork", () => {
   unloadForklift();
   unloadBtn.disabled = true;
   generateBtn.disabled = false;
 });
 
-const loadBtn = addToNavbar("Carica Bobina", () => {
+const loadBtn = addToNavbar("Load Fork", () => {
   loadForklift();
   loadBtn.disabled = true;
   generateBtn.disabled = true;
@@ -255,10 +229,19 @@ let bobinaLabel = addToInformation("");
 //#endregion
 
 //#region Generazione Elementi
+let textureRep = 60;
+
+const texture = new Three.TextureLoader().load("textures/Asfalto256x256.png");
+
+// immediately use the texture for material creation
+// let textureResolution = {width:texture.source.data.natural}
+texture.wrapS = Three.RepeatWrapping;
+texture.wrapT = Three.RepeatWrapping;
+texture.repeat.set(textureRep, textureRep);
 
 const plane = new Three.Mesh(
   new Three.PlaneGeometry(200, 200),
-  new Three.MeshBasicMaterial({ color: "#37c21b" })
+  new Three.MeshBasicMaterial({ map: texture })
 );
 plane.rotation.x = Math.PI / 2;
 scene.add(plane);
@@ -312,7 +295,9 @@ const forkCollisionBox = new Three.Mesh(
   new Three.ShapeGeometry(forkShape),
   new Three.MeshPhongMaterial({ side: Three.DoubleSide, color: "#5555ff" })
 );
-forkLift.add(forkCollisionBox);
+//AREA FORCHE
+// forkLift.add(forkCollisionBox);
+
 forkCollisionBox.scale.divideScalar(worldScale);
 forkCollisionBox.rotation.x = -Math.PI / 2;
 forkCollisionBox.position.y -= 2.15 / worldScale;
@@ -341,10 +326,7 @@ function animate() {
   if (!isForkliftLoaded) {
     if (!bobinaCollision()) {
       if (currentBobinaModel) {
-        currentBobinaModel.children[0].material.color.copy(oldBobinaColors[0]);
-        currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
-        currentBobinaModel = null;
-        oldBobinaColors = [];
+        backToNormalColor();
       }
     }
   }
@@ -400,6 +382,11 @@ function generateFloorsOld() {
 }
 
 function generateFloors() {
+  let texture = new Three.TextureLoader().load('textures/Green3_280.png');
+  texture.wrapS = Three.RepeatWrapping;
+  texture.wrapT = Three.RepeatWrapping;
+  texture.repeat.set(0.3, 0.3);
+
   floors.forEach((floor) => {
     let floorShape = new Three.Shape();
     floorShape.moveTo(floor.point1.x, floor.point1.y);
@@ -410,7 +397,7 @@ function generateFloors() {
     const floorGeometry = new Three.ShapeGeometry(floorShape);
     let newFloor = new Three.Mesh(
       floorGeometry,
-      new Three.MeshPhongMaterial({ side: Three.DoubleSide, color: "#ff0000" })
+      new Three.MeshPhongMaterial({ side: Three.DoubleSide, map: texture })
     );
     newFloor.position.y = -0.05;
     // console.log(floorShape);
@@ -865,12 +852,12 @@ function createLabel(left, top, id) {
 
 function addToInformation(text) {
   const information = document.createElement("p");
-
   information.textContent = text;
 
-  information.className = "row m-1";
+  information.className = "text-light mx-1 my-0";
 
-  container.appendChild(information);
+  informationRows.appendChild(information)
+
   return information;
 }
 
@@ -964,25 +951,30 @@ function unloadForklift() {
 }
 
 function loadForklift() {
-  console.log("LOAD");
   let newBobina = scene.children.find(
     (x) => x.name == currentBobina.id && x.type == "Group" && x.tipo == "bobina"
   );
-  console.log("nuova bobina:");
-  console.log(newBobina);
   forkLift.attach(newBobina);
+  newBobina.rotation.y =
+    newBobina.rotation.y % (Math.PI / 2) > Math.PI / 4
+      ? Math.PI / 2
+      : -Math.PI / 2;
+  newBobina.position.x = 0;
   removePolygon();
+  backToNormalColor();
   isForkliftLoaded = true;
 }
 
 async function spawnBobina(id) {
   let bobina = (await loadJson("bobineEsterne.json", "id", id))[0];
+
   if (!bobina) {
     return "La bobina non esiste nel database";
   }
   let newBobina = await loadFbx(bobinaPath);
 
   newBobina.name = bobina.id;
+  newBobina.tipo = "bobina";
   newBobina.scale.set(
     bobina.base / forkLiftScale,
     bobina.depth / forkLiftScale,
@@ -1003,8 +995,17 @@ async function spawnBobina(id) {
   isForkliftLoaded = true;
 
   currentBobina = bobina;
+
   changeBobinaLabel();
+
   return;
+}
+
+function backToNormalColor() {
+  currentBobinaModel.children[0].material.color.copy(oldBobinaColors[0]);
+  currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
+  currentBobinaModel = null;
+  oldBobinaColors = [];
 }
 
 //#endregion
