@@ -966,6 +966,10 @@ function loadForklift() {
 }
 
 async function spawnBobina(id) {
+  if (!id)
+  {
+    return "Id bobina non inserito";
+  }
   let bobina = (await loadJson("bobineEsterne.json", "id", id))[0];
 
   if (!bobina) {
