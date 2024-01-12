@@ -16,11 +16,11 @@ class Point {
   }
 }
 
-class Mission{
+class Mission {
   id;
   bobine;
   destinationArea;
-  constructor(id,bobine,destinationArea){
+  constructor(id, bobine, destinationArea) {
     this.id = id;
     this.bobine = bobine;
     this.destinationArea = destinationArea;
@@ -149,11 +149,24 @@ const loadBtn = addToNavbar("Load Fork", () => {
   unloadBtn.disabled = false;
 });
 
-const missionBtn = addToNavbar("Start first mission", () =>{
-  currentMission = missions[1];
-  currentTarget = scene.children.find(x => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
-  arrow.visible = true;
-})
+const missionBtn = addToNavbar("Start mission", () => {
+  if (missions.length == 0) {
+    showPopup("MISSIONI NON DISPONIBILI");
+  } else {
+    showMissionsForm();
+  }
+});
+
+const abortlMissionBtn = addToNavbar("Abort mission", () => {
+  currentMission = undefined;
+  currentTarget = forkLift.position;
+  arrow.visible = false;
+  targetArrow.visible = false;
+
+  missionBtn.disabled = false;
+  abortlMissionBtn.disabled = true;
+});
+abortlMissionBtn.disabled = true;
 
 addControls();
 
@@ -337,13 +350,14 @@ forkCollisionBox.position.z = -forkCollisionBoxPoints[0].y / worldScale;
 loadBtn.disabled = true;
 unloadBtn.disabled = true;
 
-
 generateFloors();
 generateBobine();
 
 document.body.appendChild(renderer.domElement);
 
 let currentTarget = forkLift.position;
+
+//#region Arrow
 
 let arrow = await loadFbx(arrowPath);
 arrow.name = "freccia";
@@ -359,17 +373,27 @@ arrow.position.z = -5;
 
 arrow.rotation.order = "YXZ";
 
+let targetArrow = arrow.clone();
+
 scene.add(arrow);
 forkLift.attach(arrow);
 
+targetArrow.name = "frecciaTarget";
+targetArrow.visible = false;
+targetArrow.rotation.x = -Math.PI / 2;
+scene.add(targetArrow);
 
+//#endregion
 
 //ANIMATE;
 function animate() {
-
   arrow.lookAt(currentTarget.clone().multiply(new Three.Vector3(-1, 1, 1)));
   arrow.rotation.x = 0;
   arrow.rotation.z = 0;
+
+  targetArrow.position.y = Math.cos(Date.now() / 400) / 2.6 - 5;
+  targetArrow.position.x = currentTarget.x;
+  targetArrow.position.z = currentTarget.z;
 
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
   forkLift.translateZ(-inputMovement.movement * translationSpeed);
@@ -493,7 +517,7 @@ async function generateBobine() {
       bobina.position.y = -(f.base / 2 - 0.1 * f.base);
     }
     generateBobinaPolygon(newCenter, f);
-    
+
     scene.add(bobina);
   });
 }
@@ -732,7 +756,6 @@ function bobinaCollision() {
           oldBobinaColors = [];
         }
 
-        
         currentBobinaModel = scene.children.find(
           (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
         );
@@ -852,12 +875,109 @@ function createControllerButton() {
   document.body.appendChild(div);
 }
 
+function showMissionsForm() {
+  navbar.style.visibility = "hidden";
+
+  const div = document.createElement("div");
+  const missionDiv = document.createElement("div");
+  const missionsList = document.createElement("select");
+  const cancelBtn = document.createElement("button");
+  const sendBtn = document.createElement("button");
+
+  missionDiv.className = "col";
+  missionsList.className = "form-select";
+  cancelBtn.className = "col mx-1";
+  sendBtn.className = "col mx-1";
+
+  missions.forEach((x) => {
+    var option = document.createElement("option");
+    option.value = x.id;
+    option.text = "Mission Id: " + x.id;
+    missionsList.appendChild(option);
+  });
+
+  div.style.background = "rgb(233,233,233)";
+  cancelBtn.innerHTML = "Cancella";
+  sendBtn.innerHTML = "Invia";
+  div.className =
+    "position-absolute top-50 start-50 translate-middle p-3 rounded-1 row w-50";
+
+  missionDiv.appendChild(missionsList);
+  div.appendChild(missionDiv);
+  div.appendChild(sendBtn);
+  div.appendChild(cancelBtn);
+
+  missionBtn.disabled = true;
+
+  sendBtn.addEventListener("click", async () => {
+    navbar.style.visibility = "visible";
+    currentMission = missions.find(
+      (x) => x.id == missionsList.options[missionsList.selectedIndex].value
+    );
+    currentTarget = scene.children.find(
+      (x) => x.name == currentMission.bobine[0] && x.tipo == "bobina"
+    ).position;
+    arrow.visible = true;
+    abortlMissionBtn.disabled = false;
+    targetArrow.visible = true;
+    document.body.removeChild(div);
+  });
+  cancelBtn.addEventListener("click", () => {
+    navbar.style.visibility = "visible";
+    missionBtn.disabled = false;
+    document.body.removeChild(div);
+  });
+
+  document.body.appendChild(div);
+}
+
+function showPopup(messaggio) {
+  navbar.style.visibility = "hidden";
+  const message = document.createElement("p");
+  const div = document.createElement("div");
+  const padding = document.createElement("div");
+  message.textContent = messaggio;
+  div.appendChild(message);
+  const sendBtn = document.createElement("button");
+  div.style.background = "rgb(233,233,233)";
+
+  sendBtn.innerHTML = "OK";
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  padding.className = "col-4";
+
+  row.appendChild(padding);
+  div.appendChild(row);
+
+  sendBtn.className = "col-4";
+  div.className =
+    "position-absolute top-50 start-50 translate-middle p-3 rounded-1";
+
+  row.appendChild(sendBtn);
+
+  row.appendChild(sendBtn);
+
+  sendBtn.addEventListener("click", async () => {
+    navbar.style.visibility = "visible";
+    document.body.removeChild(div);
+  });
+  document.body.appendChild(div);
+}
+
 function showForm() {
+  navbar.style.visibility = "hidden";
   const message = document.createElement("p");
   const div = document.createElement("div");
   const textArea = document.createElement("input");
   const cancelBtn = document.createElement("button");
   const sendBtn = document.createElement("button");
+
+  textArea.className = "mx-1";
+  cancelBtn.className = "mx-1 px-2";
+  sendBtn.className = "mx-1 px-2";
+
   div.style.background = "rgb(233,233,233)";
   cancelBtn.innerHTML = "Cancella";
   sendBtn.innerHTML = "Invia";
@@ -871,7 +991,7 @@ function showForm() {
   generateBtn.disabled = true;
 
   sendBtn.addEventListener("click", async () => {
-    console.log(typeof +textArea.value);
+    navbar.style.visibility = "visible";
     let text = await spawnBobina(textArea.value);
 
     if (text) {
@@ -883,6 +1003,7 @@ function showForm() {
     }
   });
   cancelBtn.addEventListener("click", () => {
+    navbar.style.visibility = "visible";
     generateBtn.disabled = false;
     document.body.removeChild(div);
   });
@@ -1001,21 +1122,28 @@ function unloadForklift() {
   );
   bobine.push(currentBobina);
   isForkliftLoaded = false;
-  if (currentArea.id == currentMission.destinationArea && bobina.name == currentMission.bobine[0])
-  {
+  if (
+    currentArea.id == currentMission.destinationArea &&
+    bobina.name == currentMission.bobine[0]
+  ) {
     currentMission.bobine.shift();
-    if (currentMission.bobine.length == 0)
-    {
+    if (currentMission.bobine.length == 0) {
+      missions.splice(missions.indexOf(currentMission), 1);
       currentMission = undefined;
       currentTarget = forkLift.position;
       arrow.visible = false;
+      targetArrow.visible = false;
+      missionBtn.disabled = false;
+      abortlMissionBtn.disabled = true;
+      showPopup("MISSIONE COMPLETATA");
     }
-    
-    
-    
   }
 
-  currentTarget = scene.children.find(x => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
+  if (currentMission) {
+    currentTarget = scene.children.find(
+      (x) => x.name == currentMission.bobine[0] && x.tipo == "bobina"
+    ).position;
+  }
 }
 
 function loadForklift() {
@@ -1031,17 +1159,16 @@ function loadForklift() {
   removePolygon();
   backToNormalColor();
   isForkliftLoaded = true;
-  
-  if(currentMission){
-    if(currentMission.bobine.find(x => x == newBobina.name)){
-      currentTarget = scene.children.find(x => 
-        x.name == currentMission.destinationArea && x.tipo == "floor").geometry.boundingSphere.center;
-      currentTarget = new Three.Vector3(currentTarget.x,0,currentTarget.y);
+
+  if (currentMission) {
+    if (currentMission.bobine.find((x) => x == newBobina.name)) {
+      currentTarget = scene.children.find(
+        (x) => x.name == currentMission.destinationArea && x.tipo == "floor"
+      ).geometry.boundingSphere.center;
+      currentTarget = new Three.Vector3(currentTarget.x, 0, currentTarget.y);
       // console.log(currentTarget);
       // currentTarget = scene.children.find(x => x.name == currentMission.destinationArea && x.tipo == "floor").position;
-
     }
-      
   }
 }
 
