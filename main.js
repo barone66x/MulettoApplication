@@ -1123,6 +1123,7 @@ function unloadForklift() {
   bobine.push(currentBobina);
   isForkliftLoaded = false;
   if (
+    currentMission &&
     currentArea.id == currentMission.destinationArea &&
     bobina.name == currentMission.bobine[0]
   ) {
@@ -1173,7 +1174,13 @@ function loadForklift() {
 }
 
 async function spawnBobina(id) {
+  console.log(id);
+  if (!id)
+  {
+    return "Id bobina non inserito";
+  }
   let bobina = (await loadJson("bobineEsterne.json", "id", id))[0];
+  console.log(bobina);
 
   if (!bobina) {
     return "La bobina non esiste nel database";
@@ -1273,6 +1280,7 @@ async function loadJson(path, field, filter) {
   let res = await (await fetch(path)).json();
   if (filter && field) {
     res = res.filter((x) => x[field] == filter);
+    console.log(res);
   }
 
   return res;
