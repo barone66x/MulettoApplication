@@ -35,6 +35,12 @@ const inputMovement = {
 let floorsJsonPath = "./floor.json";
 let bobineJsonPath = "./bobine.json";
 let missionsJsonPath = "./missions.json";
+let bobineEsterneJsonPath = "./bobineEsterne.json";
+
+let missionsApiPath = "http://localhost:5154/missions";
+let bobineApiPath = "http://localhost:5154/bobine";
+let floorsApiPath = "http://localhost:5154/floors";
+let bobineEsterneApiPath = "http://localhost:5154/bobineEsterne";
 
 let forkliftPath = "./models/Forklift.fbx";
 let bobinaPath = "./models/bobina2.fbx";
@@ -68,9 +74,13 @@ scene.rotation.z = Math.PI;
 scene.background = new Three.Color(0x95ecfc);
 scene.add(new Three.AmbientLight());
 
-floors = await loadJson(floorsJsonPath);
-bobine = await loadJson(bobineJsonPath);
-missions = await loadJson(missionsJsonPath);
+// floors = await loadJson(floorsJsonPath);
+// bobine = await loadJson(bobineJsonPath);
+// missions = await loadJson(missionsJsonPath);
+floors = await loadJson(floorsApiPath);
+bobine = await loadJson(bobineApiPath);
+missions = await loadJson(missionsApiPath);
+
 
 let currentArea; //json area
 let currentBobina; //json bobina
@@ -1175,11 +1185,10 @@ function loadForklift() {
 
 async function spawnBobina(id) {
   console.log(id);
-  if (!id)
-  {
+  if (!id) {
     return "Id bobina non inserito";
   }
-  let bobina = (await loadJson("bobineEsterne.json", "id", id))[0];
+  let bobina = (await loadJson(bobineEsterneApiPath, "id", id))[0];
   console.log(bobina);
 
   if (!bobina) {
@@ -1285,6 +1294,8 @@ async function loadJson(path, field, filter) {
 
   return res;
 }
+
+
 
 async function stressTest() {
   const bobina = await loadFbx(bobinaPath);

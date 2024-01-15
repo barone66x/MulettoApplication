@@ -1,11 +1,11 @@
 [
   {
-    "id": 1,
+    "id": 0,
     "bobine": [100, 101],
     "destinationArea": 1
   },
   {
-    "id": 2,
+    "id": 1,
     "bobine": [1, 57],
     "destinationArea": 5
   }

@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema Namespace="MulettoApplicationDBModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityType Name="Bobine">
+    <Key>
+      <PropertyRef Name="id" />
+    </Key>
+    <Property Name="id" Type="int" Nullable="false" />
+    <Property Name="floorId" Type="int" />
+    <Property Name="base" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="height" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="depth" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="rotation" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="isStanding" Type="bit" Nullable="false" />
+    <Property Name="x" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="y" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+  </EntityType>
+  <EntityType Name="BobineEsterne">
+    <Key>
+      <PropertyRef Name="id" />
+    </Key>
+    <Property Name="id" Type="int" Nullable="false" />
+    <Property Name="base" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="height" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="depth" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Floors">
+    <Key>
+      <PropertyRef Name="id" />
+    </Key>
+    <Property Name="id" Type="int" Nullable="false" />
+    <Property Name="name" Type="nvarchar" MaxLength="100" Nullable="false" />
+    <Property Name="p1x" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p1y" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p2x" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p2y" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p3x" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p3y" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p4x" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+    <Property Name="p4y" Type="decimal" Precision="18" Scale="0" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Missions">
+    <Key>
+      <PropertyRef Name="id" />
+    </Key>
+    <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="destinationId" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="MissionsBobine">
+    <Key>
+      <PropertyRef Name="missionId" />
+      <PropertyRef Name="bobinaId" />
+    </Key>
+    <Property Name="missionId" Type="int" Nullable="false" />
+    <Property Name="bobinaId" Type="int" Nullable="false" />
+  </EntityType>
+  <Association Name="FK__Bobine__idFloor__48CFD27E">
+    <End Role="Floors" Type="Self.Floors" Multiplicity="0..1" />
+    <End Role="Bobine" Type="Self.Bobine" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Floors">
+        <PropertyRef Name="id" />
+      </Principal>
+      <Dependent Role="Bobine">
+        <PropertyRef Name="floorId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK__Missions__destin__4D94879B">
+    <End Role="Floors" Type="Self.Floors" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="Missions" Type="Self.Missions" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Floors">
+        <PropertyRef Name="id" />
+      </Principal>
+      <Dependent Role="Missions">
+        <PropertyRef Name="destinationId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK__MissionsB__bobin__5165187F">
+    <End Role="Bobine" Type="Self.Bobine" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="MissionsBobine" Type="Self.MissionsBobine" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Bobine">
+        <PropertyRef Name="id" />
+      </Principal>
+      <Dependent Role="MissionsBobine">
+        <PropertyRef Name="bobinaId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK__MissionsB__missi__5070F446">
+    <End Role="Missions" Type="Self.Missions" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="MissionsBobine" Type="Self.MissionsBobine" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Missions">
+        <PropertyRef Name="id" />
+      </Principal>
+      <Dependent Role="MissionsBobine">
+        <PropertyRef Name="missionId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <EntityContainer Name="MulettoApplicationDBModelStoreContainer">
+    <EntitySet Name="Bobine" EntityType="Self.Bobine" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="BobineEsterne" EntityType="Self.BobineEsterne" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="Floors" EntityType="Self.Floors" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="Missions" EntityType="Self.Missions" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="MissionsBobine" EntityType="Self.MissionsBobine" Schema="dbo" store:Type="Tables" />
+    <AssociationSet Name="FK__Bobine__idFloor__48CFD27E" Association="Self.FK__Bobine__idFloor__48CFD27E">
+      <End Role="Floors" EntitySet="Floors" />
+      <End Role="Bobine" EntitySet="Bobine" />
+    </AssociationSet>
+    <AssociationSet Name="FK__Missions__destin__4D94879B" Association="Self.FK__Missions__destin__4D94879B">
+      <End Role="Floors" EntitySet="Floors" />
+      <End Role="Missions" EntitySet="Missions" />
+    </AssociationSet>
+    <AssociationSet Name="FK__MissionsB__bobin__5165187F" Association="Self.FK__MissionsB__bobin__5165187F">
+      <End Role="Bobine" EntitySet="Bobine" />
+      <End Role="MissionsBobine" EntitySet="MissionsBobine" />
+    </AssociationSet>
+    <AssociationSet Name="FK__MissionsB__missi__5070F446" Association="Self.FK__MissionsB__missi__5070F446">
+      <End Role="Missions" EntitySet="Missions" />
+      <End Role="MissionsBobine" EntitySet="MissionsBobine" />
+    </AssociationSet>
+  </EntityContainer>
+</Schema>

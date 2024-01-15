@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="MulettoApplicationDBModelStoreContainer" CdmEntityContainer="MulettoApplicationDBEntities">
+    <EntitySetMapping Name="Bobine">
+      <EntityTypeMapping TypeName="MulettoApplicationDBModel.Bobine">
+        <MappingFragment StoreEntitySet="Bobine">
+          <ScalarProperty Name="id" ColumnName="id" />
+          <ScalarProperty Name="floorId" ColumnName="floorId" />
+          <ScalarProperty Name="base" ColumnName="base" />
+          <ScalarProperty Name="height" ColumnName="height" />
+          <ScalarProperty Name="depth" ColumnName="depth" />
+          <ScalarProperty Name="rotation" ColumnName="rotation" />
+          <ScalarProperty Name="isStanding" ColumnName="isStanding" />
+          <ScalarProperty Name="x" ColumnName="x" />
+          <ScalarProperty Name="y" ColumnName="y" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="BobineEsterne">
+      <EntityTypeMapping TypeName="MulettoApplicationDBModel.BobineEsterne">
+        <MappingFragment StoreEntitySet="BobineEsterne">
+          <ScalarProperty Name="id" ColumnName="id" />
+          <ScalarProperty Name="base" ColumnName="base" />
+          <ScalarProperty Name="height" ColumnName="height" />
+          <ScalarProperty Name="depth" ColumnName="depth" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Floors">
+      <EntityTypeMapping TypeName="MulettoApplicationDBModel.Floors">
+        <MappingFragment StoreEntitySet="Floors">
+          <ScalarProperty Name="id" ColumnName="id" />
+          <ScalarProperty Name="name" ColumnName="name" />
+          <ScalarProperty Name="p1x" ColumnName="p1x" />
+          <ScalarProperty Name="p1y" ColumnName="p1y" />
+          <ScalarProperty Name="p2x" ColumnName="p2x" />
+          <ScalarProperty Name="p2y" ColumnName="p2y" />
+          <ScalarProperty Name="p3x" ColumnName="p3x" />
+          <ScalarProperty Name="p3y" ColumnName="p3y" />
+          <ScalarProperty Name="p4x" ColumnName="p4x" />
+          <ScalarProperty Name="p4y" ColumnName="p4y" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Missions">
+      <EntityTypeMapping TypeName="MulettoApplicationDBModel.Missions">
+        <MappingFragment StoreEntitySet="Missions">
+          <ScalarProperty Name="id" ColumnName="id" />
+          <ScalarProperty Name="destinationId" ColumnName="destinationId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <AssociationSetMapping Name="MissionsBobine" TypeName="MulettoApplicationDBModel.MissionsBobine" StoreEntitySet="MissionsBobine">
+      <EndProperty Name="Bobine">
+        <ScalarProperty Name="id" ColumnName="bobinaId" />
+      </EndProperty>
+      <EndProperty Name="Missions">
+        <ScalarProperty Name="id" ColumnName="missionId" />
+      </EndProperty>
+    </AssociationSetMapping>
+  </EntityContainerMapping>
+</Mapping>

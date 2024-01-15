@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="7efae10c3cac41dda7f3521945d06088" Name="Diagram1">
+        <EntityTypeShape EntityType="MulettoApplicationDBModel.Bobine" Width="1.5" PointX="3" PointY="1.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="MulettoApplicationDBModel.BobineEsterne" Width="1.5" PointX="0.75" PointY="5.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="MulettoApplicationDBModel.Floors" Width="1.5" PointX="0.75" PointY="1" IsExpanded="true" />
+        <EntityTypeShape EntityType="MulettoApplicationDBModel.Missions" Width="1.5" PointX="5.25" PointY="1.75" IsExpanded="true" />
+        <AssociationConnector Association="MulettoApplicationDBModel.FK__Bobine__idFloor__48CFD27E" ManuallyRouted="false" />
+        <AssociationConnector Association="MulettoApplicationDBModel.FK__Missions__destin__4D94879B" ManuallyRouted="false" />
+        <AssociationConnector Association="MulettoApplicationDBModel.MissionsBobine" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
