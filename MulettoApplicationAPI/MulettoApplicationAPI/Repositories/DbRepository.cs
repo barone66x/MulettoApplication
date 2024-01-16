@@ -82,7 +82,7 @@ namespace MulettoApplicationAPI.Repositories
                             }
                         }
                     }
-                    Debug.WriteLine(res);
+                    
                     return res;
 
                 }

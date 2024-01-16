@@ -32,15 +32,18 @@ const inputMovement = {
   rotation: 0,
 };
 
+let inputForkMovement = 0;
+let forkSpeed = 0.02;
+
 let floorsJsonPath = "./floor.json";
 let bobineJsonPath = "./bobine.json";
 let missionsJsonPath = "./missions.json";
 let bobineEsterneJsonPath = "./bobineEsterne.json";
 
-let missionsApiPath = "http://localhost:5154/missions";
-let bobineApiPath = "http://localhost:5154/bobine";
-let floorsApiPath = "http://localhost:5154/floors";
-let bobineEsterneApiPath = "http://localhost:5154/bobineEsterne";
+let missionsApiPath = "http://172.16.107.136:5174/missions";
+let bobineApiPath = "http://172.16.107.136:5174/bobine";
+let floorsApiPath = "http://172.16.107.136:5174/floors";
+let bobineEsterneApiPath = "http://172.16.107.136:5174/bobineEsterne";
 
 let forkliftPath = "./models/Forklift.fbx";
 let bobinaPath = "./models/bobina2.fbx";
@@ -112,6 +115,20 @@ skyCamera.position.x = 0 / worldScale;
 skyCamera.position.y = 10 / worldScale;
 skyCamera.position.z = 0;
 skyCamera.lookAt(new Three.Vector3(0, 0, 0));
+
+
+const sideCamera = new Three.PerspectiveCamera(
+  70,
+  res.width / res.height,
+  0.1,
+  5000 / worldScale
+);
+
+sideCamera.position.x = -10 / worldScale;
+sideCamera.position.y = 0 / worldScale;
+sideCamera.position.z = 0;
+sideCamera.lookAt(new Three.Vector3(0, 0, 0));
+
 
 let currentCamera = forkLiftCamera;
 //#endregion
@@ -303,12 +320,19 @@ forkLift.scale.multiplyScalar(worldScale * forkLiftScale);
 forkLift.rotation.z = Math.PI;
 forkLift.add(forkLiftCamera);
 forkLift.add(skyCamera);
+forkLift.add(sideCamera);
 const forkCollisionBoxPoints = [
   new Point(-1.6, 3.2),
   new Point(1.6, 3.2),
   new Point(1, 0.7),
   new Point(-1, 0.7),
 ];
+let fork = forkLift.getObjectByName("Fork");
+// fork = forkLift.children.find((x) => x.name = "Fork");
+
+// let fork = forkLift.children[4];
+
+
 
 // const forkLiftCollisionSphere = new Three.Mesh(new Three.SphereGeometry(0.2), new Three.MeshNormalMaterial());
 // forkLiftCollisionSphere.material.transparent = true;
@@ -407,6 +431,10 @@ function animate() {
 
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
   forkLift.translateZ(-inputMovement.movement * translationSpeed);
+  if (forkCheckPosition())
+    {
+      fork.position.y += inputForkMovement * forkSpeed / worldScale * forkLiftScale;
+    }
 
   floorCollision();
   if (!isForkliftLoaded) {
@@ -432,9 +460,11 @@ function onResize() {
 
   skyCamera.aspect = res.width / res.height;
   forkLiftCamera.aspect = res.width / res.height;
+  sideCamera.aspect = res.width / res.height;
 
   forkLiftCamera.updateProjectionMatrix();
   skyCamera.updateProjectionMatrix(); //Se si modificano queste proprietà della currentCamera bisogna aggiornare la matrice d proiezione
+  sideCamera.updateProjectionMatrix();
 }
 
 function generateFloorsOld() {
@@ -1103,17 +1133,21 @@ function isInArea(area) {
 }
 
 function changeCamera() {
-  if (currentCamera == skyCamera) {
+  if (currentCamera == sideCamera) {
     currentCamera = forkLiftCamera;
-  } else {
+  } else if (currentCamera == forkLiftCamera){
     currentCamera = skyCamera;
+  }
+  else
+  {
+    currentCamera = sideCamera;
   }
 }
 
 //#region interazione bobine
 
 function unloadForklift() {
-  let bobina = forkLift.children[forkLift.children.length - 1];
+  let bobina = fork.children[fork.children.length - 1];
 
   scene.attach(bobina);
 
@@ -1161,7 +1195,7 @@ function loadForklift() {
   let newBobina = scene.children.find(
     (x) => x.name == currentBobina.id && x.type == "Group" && x.tipo == "bobina"
   );
-  forkLift.attach(newBobina);
+  fork.attach(newBobina);
   newBobina.rotation.y =
     newBobina.rotation.y % (Math.PI / 2) > Math.PI / 4
       ? Math.PI / 2
@@ -1229,6 +1263,15 @@ function backToNormalColor() {
   currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
   currentBobinaModel = null;
   oldBobinaColors = [];
+  
+}
+
+function forkCheckPosition(){
+  if ((fork.position.y <= -1099.46337890625 && inputForkMovement <0) || (fork.position.y > 720.5 && inputForkMovement > 0)){
+    return false;
+  }
+  return true;
+  
 }
 
 //#endregion
@@ -1237,6 +1280,7 @@ function backToNormalColor() {
 window.addEventListener("resize", onResize);
 
 window.addEventListener("keydown", (event) => {
+  console.log(event.code);
   switch (event.code) {
     case "KeyA": {
       inputMovement.rotation = 1;
@@ -1257,6 +1301,16 @@ window.addEventListener("keydown", (event) => {
 
     case "KeyC": {
       changeCamera();
+      break;
+    }
+    case "ArrowUp":{
+      inputForkMovement = +1
+      
+      break;
+    }
+    case "ArrowDown":{
+      inputForkMovement = -1
+      break;
     }
   }
 });
@@ -1277,6 +1331,14 @@ window.addEventListener("keyup", (event) => {
     }
     case "KeyS": {
       inputMovement.movement += (1 - inputMovement.movement) / 2;
+      break;
+    }
+    case "ArrowUp":{
+      inputForkMovement -= (1 + inputForkMovement)/2;
+      break;
+    }
+    case "ArrowDown":{
+      inputForkMovement += (1 - inputForkMovement)/2;
       break;
     }
   }

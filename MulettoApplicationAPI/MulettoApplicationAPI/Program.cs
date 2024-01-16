@@ -3,8 +3,11 @@ using MulettoApplicationAPI;
 using Microsoft.EntityFrameworkCore;
 using MulettoApplicationAPI.Repositories;
 using Microsoft.AspNetCore.Cors;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
 
 // Add services to the container.
 
@@ -16,6 +19,7 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin();
         policy.AllowAnyHeader();
         policy.AllowAnyMethod();
+
     });
 });
 
@@ -25,6 +29,9 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//builder.WebHost.ConfigureKestrel((context, serverOptions) => { serverOptions.Listen(IPAddress.Loopback, 5154); });
+
+
 
 
 var app = builder.Build();
@@ -49,6 +56,6 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllers();
 });
 
-app.Run();
+app.Run("http://*:5174");
 
 
