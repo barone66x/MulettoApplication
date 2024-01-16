@@ -84,7 +84,6 @@ floors = await loadJson(floorsApiPath);
 bobine = await loadJson(bobineApiPath);
 missions = await loadJson(missionsApiPath);
 
-
 let currentArea; //json area
 let currentBobina; //json bobina
 let currentBobinaModel; //modello 3d bobina
@@ -116,7 +115,6 @@ skyCamera.position.y = 10 / worldScale;
 skyCamera.position.z = 0;
 skyCamera.lookAt(new Three.Vector3(0, 0, 0));
 
-
 const sideCamera = new Three.PerspectiveCamera(
   70,
   res.width / res.height,
@@ -128,7 +126,6 @@ sideCamera.position.x = -10 / worldScale;
 sideCamera.position.y = 0 / worldScale;
 sideCamera.position.z = 0;
 sideCamera.lookAt(new Three.Vector3(0, 0, 0));
-
 
 let currentCamera = forkLiftCamera;
 //#endregion
@@ -332,8 +329,6 @@ let fork = forkLift.getObjectByName("Fork");
 
 // let fork = forkLift.children[4];
 
-
-
 // const forkLiftCollisionSphere = new Three.Mesh(new Three.SphereGeometry(0.2), new Three.MeshNormalMaterial());
 // forkLiftCollisionSphere.material.transparent = true;
 // forkLiftCollisionSphere.material.opacity = 0.5;
@@ -431,10 +426,10 @@ function animate() {
 
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
   forkLift.translateZ(-inputMovement.movement * translationSpeed);
-  if (forkCheckPosition())
-    {
-      fork.position.y += inputForkMovement * forkSpeed / worldScale * forkLiftScale;
-    }
+  if (forkCheckPosition()) {
+    fork.position.y +=
+      ((inputForkMovement * forkSpeed) / worldScale) * forkLiftScale;
+  }
 
   floorCollision();
   if (!isForkliftLoaded) {
@@ -773,43 +768,40 @@ function bobinaCollision() {
 
   bobinaPolygons.forEach((bobina) => {
     if (isInArea(bobina)) {
-      currentBobina = bobine.find((x) => x.id == bobina.name);
-      trovato = true;
+      let currentBobina2 = bobine.find((x) => x.id == bobina.name);
       const collidedBobinaModel = scene.children.find(
         (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
       );
-      if (collidedBobinaModel != currentBobinaModel) {
-        if (currentBobinaModel) {
-          // currentBobinaModel.children.forEach((figlio) => {
-          //   console.log(oldBobinaColors);
-          //   figlio.material.color.copy(oldBobinaColors[0]);
+      if (checkHeight(currentBobina2, collidedBobinaModel)) {
+        currentBobina = currentBobina2;
+        trovato = true;
+        if (collidedBobinaModel != currentBobinaModel) {
+          if (currentBobinaModel) {
+            currentBobinaModel.children[0].material.color.copy(
+              oldBobinaColors[0]
+            );
+            currentBobinaModel.children[1].material.color.copy(
+              oldBobinaColors[1]
+            );
+            currentBobinaModel = null;
+            oldBobinaColors = [];
+          }
 
-          //   oldBobinaColors = oldBobinaColors.slice(0, -1);
-          // });
-          currentBobinaModel.children[0].material.color.copy(
-            oldBobinaColors[0]
-          );
-          currentBobinaModel.children[1].material.color.copy(
-            oldBobinaColors[1]
-          );
-          currentBobinaModel = null;
-          oldBobinaColors = [];
-        }
-
-        currentBobinaModel = scene.children.find(
-          (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
-        );
-        if (!currentBobinaModel) {
-          currentBobinaModel = forkLift.children.find(
+          currentBobinaModel = scene.children.find(
             (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
           );
+          if (!currentBobinaModel) {
+            currentBobinaModel = forkLift.children.find(
+              (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
+            );
+          }
+
+          currentBobinaModel.children.forEach((x) => {
+            oldBobinaColors.push(x.material.color.clone());
+
+            x.material.color.setHex(0xffff00);
+          });
         }
-
-        currentBobinaModel.children.forEach((x) => {
-          oldBobinaColors.push(x.material.color.clone());
-
-          x.material.color.setHex(0xffff00);
-        });
       }
     }
   });
@@ -833,6 +825,30 @@ function changeBobinaLabel() {
     currentBobina.depth +
     "<br>bobina diameter: " +
     currentBobina.base;
+}
+
+function checkHeight(x, y) {
+  let yPoint;
+
+  let test = new Three.Vector3();
+  let test2 = new Three.Vector3();
+
+  fork.getWorldPosition(test);
+  y.getWorldPosition(test2);
+
+  if (x.isStanding) {
+    yPoint = test2.y - 0.45 * x.depth;
+  } else {
+    yPoint = test2.y - 0.7 * (x.height / 2);
+  }
+
+  console.log("forca");
+  console.log(test.y);
+  console.log("bobina");
+  console.log(test2.y);
+  console.log("bobine si");
+  console.log(yPoint);
+  return yPoint >= test.y;
 }
 
 async function loadFbx(path) {
@@ -1135,11 +1151,9 @@ function isInArea(area) {
 function changeCamera() {
   if (currentCamera == sideCamera) {
     currentCamera = forkLiftCamera;
-  } else if (currentCamera == forkLiftCamera){
+  } else if (currentCamera == forkLiftCamera) {
     currentCamera = skyCamera;
-  }
-  else
-  {
+  } else {
     currentCamera = sideCamera;
   }
 }
@@ -1263,15 +1277,16 @@ function backToNormalColor() {
   currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
   currentBobinaModel = null;
   oldBobinaColors = [];
-  
 }
 
-function forkCheckPosition(){
-  if ((fork.position.y <= -1099.46337890625 && inputForkMovement <0) || (fork.position.y > 720.5 && inputForkMovement > 0)){
+function forkCheckPosition() {
+  if (
+    (fork.position.y <= -1099.46337890625 && inputForkMovement < 0) ||
+    (fork.position.y > 720.5 && inputForkMovement > 0)
+  ) {
     return false;
   }
   return true;
-  
 }
 
 //#endregion
@@ -1280,7 +1295,6 @@ function forkCheckPosition(){
 window.addEventListener("resize", onResize);
 
 window.addEventListener("keydown", (event) => {
-  console.log(event.code);
   switch (event.code) {
     case "KeyA": {
       inputMovement.rotation = 1;
@@ -1303,13 +1317,13 @@ window.addEventListener("keydown", (event) => {
       changeCamera();
       break;
     }
-    case "ArrowUp":{
-      inputForkMovement = +1
-      
+    case "ArrowUp": {
+      inputForkMovement = +1;
+
       break;
     }
-    case "ArrowDown":{
-      inputForkMovement = -1
+    case "ArrowDown": {
+      inputForkMovement = -1;
       break;
     }
   }
@@ -1333,12 +1347,12 @@ window.addEventListener("keyup", (event) => {
       inputMovement.movement += (1 - inputMovement.movement) / 2;
       break;
     }
-    case "ArrowUp":{
-      inputForkMovement -= (1 + inputForkMovement)/2;
+    case "ArrowUp": {
+      inputForkMovement -= (1 + inputForkMovement) / 2;
       break;
     }
-    case "ArrowDown":{
-      inputForkMovement += (1 - inputForkMovement)/2;
+    case "ArrowDown": {
+      inputForkMovement += (1 - inputForkMovement) / 2;
       break;
     }
   }
@@ -1356,8 +1370,6 @@ async function loadJson(path, field, filter) {
 
   return res;
 }
-
-
 
 async function stressTest() {
   const bobina = await loadFbx(bobinaPath);
