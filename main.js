@@ -192,6 +192,7 @@ const abortlMissionBtn = addToNavbar("Abort mission", () => {
 });
 abortlMissionBtn.disabled = true;
 
+
 addControls();
 
 function addControls() {
@@ -828,27 +829,20 @@ function changeBobinaLabel() {
 }
 
 function checkHeight(x, y) {
-  let yPoint;
 
-  let test = new Three.Vector3();
-  let test2 = new Three.Vector3();
+  let forkPosition = new Three.Vector3();
+  let bobinaPosition = new Three.Vector3();
 
-  fork.getWorldPosition(test);
-  y.getWorldPosition(test2);
+  fork.getWorldPosition(forkPosition);
+  y.getWorldPosition(bobinaPosition);
 
   if (x.isStanding) {
-    yPoint = test2.y - 0.45 * x.depth;
+    bobinaPosition.y -= 0.45 * x.depth;
   } else {
-    yPoint = test2.y - 0.7 * (x.height / 2);
+    bobinaPosition.y -= 0.7 * (x.height / 2);
   }
 
-  console.log("forca");
-  console.log(test.y);
-  console.log("bobina");
-  console.log(test2.y);
-  console.log("bobine si");
-  console.log(yPoint);
-  return yPoint >= test.y;
+  return bobinaPosition.y >= forkPosition.y;
 }
 
 async function loadFbx(path) {
