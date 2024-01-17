@@ -1029,13 +1029,13 @@ function showForm() {
   generateBtn.disabled = true;
 
   sendBtn.addEventListener("click", async () => {
-    navbar.style.visibility = "visible";
     let text = await spawnBobina(textArea.value);
-
+    
     if (text) {
       message.textContent = text;
       div.appendChild(message);
     } else {
+      navbar.style.visibility = "visible";
       unloadBtn.disabled = false;
       document.body.removeChild(div);
     }
@@ -1145,6 +1145,7 @@ function changeCamera() {
 function unloadForklift() {
 
   let i = 0;
+  console.log(currentBobinaModels.length);
   currentBobinaModels.forEach(model => {
     scene.attach(model);
 
@@ -1157,6 +1158,11 @@ function unloadForklift() {
     currentBobinaJsons[i].rotation = rotation - 90;
   
     currentBobinaJsons[i].floorId = currentArea.id ? currentArea.id : 0;
+
+    if (!bobine.includes(currentBobinaJsons[i])){
+      bobine.push(currentBobinaJsons[i]);
+    }
+
     generateBobinaPolygon(
       new Point(model.position.x, model.position.z),
       currentBobinaJsons[i]
@@ -1166,9 +1172,8 @@ function unloadForklift() {
     if (
       currentMission &&
       currentArea.id == currentMission.destinationArea &&
-      (index = currentMission.bobine.indexOf(x => x == model.name)) >= 0
+      (index = currentMission.bobine.indexOf(model.name)) >= 0
       ) {
-      console.log("a");
       currentMission.bobine.splice(index, 1);
       if (currentMission.bobine.length == 0) {
         missions.splice(missions.indexOf(currentMission), 1);
@@ -1180,14 +1185,13 @@ function unloadForklift() {
         abortlMissionBtn.disabled = true;
         showPopup("MISSIONE COMPLETATA");
       }
-    }
-    
-    if (currentMission) {
-      currentTarget = scene.children.find((x) => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
-    }
-
+    }  
     i +=1;
   });
+  
+  if (currentMission) {
+    currentTarget = scene.children.find((x) => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
+  }
 
   isForkliftLoaded = false;
 }
@@ -1214,51 +1218,51 @@ function loadForklift() {
 }
 
 async function spawnBobina(id) {
-  console.log(id);
+  
   if (!id) {
     return "Id bobina non inserito";
   }
   let bobina = (await loadJson(bobineEsterneApiPath, "id", id))[0];
-  console.log(bobina);
-
   if (!bobina) {
     return "La bobina non esiste nel database";
   }
-  let newBobina = await loadFbx(bobinaPath);
-
-  newBobina.name = bobina.id;
-  newBobina.tipo = "bobina";
-  newBobina.scale.set(
+  
+  let model = await loadFbx(bobinaPath);
+  model.name = bobina.id;
+  model.tipo = "bobina";
+  
+  model.scale.set(
     bobina.base / forkLiftScale,
     bobina.depth / forkLiftScale,
     bobina.height / forkLiftScale
   );
-  newBobina.rotation.z = Math.PI / 2;
-  newBobina.rotation.y = -Math.PI / 2;
+
+  model.rotation.z = Math.PI / 2;
+  model.rotation.y = -Math.PI / 2;
 
   currentBobinaOffsetX = 0;
   currentBobinaOffsetY = -2;
-  newBobina.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
-  newBobina.position.y =
-    -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) /
-    (worldScale * forkLiftScale);
-  newBobina.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
 
-  forkLift.add(newBobina);
+  model.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
+  model.position.y = -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) / (worldScale * forkLiftScale);
+  model.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
+
+  forkLift.add(model);
+  fork.attach(model);
   isForkliftLoaded = true;
 
-  currentBobina = bobina;
+  currentBobinaModels.push(model);
+  currentBobinaJsons.push(bobina);
 
+  let i = 0;
+  model.children.forEach((x) => {
+    oldBobinaColors[i] = (x.material.color.clone());
+    i += 1;
+  });
+  
   changeBobinaLabel();
-
+  
   return;
-}
-
-function backToNormalColor() {
-  currentBobinaModel.children[0].material.color.copy(oldBobinaColors[0]);
-  currentBobinaModel.children[1].material.color.copy(oldBobinaColors[1]);
-  currentBobinaModel = null;
-  oldBobinaColors = [];
 }
 
 function forkCheckPosition() {
