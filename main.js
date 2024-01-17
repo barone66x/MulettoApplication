@@ -35,15 +35,15 @@ const inputMovement = {
 let inputForkMovement = 0;
 let forkSpeed = 0.02;
 
-let floorsJsonPath = "./floor.json";
-let bobineJsonPath = "./bobine.json";
-let missionsJsonPath = "./missions.json";
-let bobineEsterneJsonPath = "./bobineEsterne.json";
+let floorsApiPath = "./floor.json";
+let bobineApiPath = "./bobine.json";
+let missionsApiPath = "./missions.json";
+let bobineEsterneApiPath = "./bobineEsterne.json";
 
-let missionsApiPath = "http://172.16.107.136:5174/missions";
-let bobineApiPath = "http://172.16.107.136:5174/bobine";
-let floorsApiPath = "http://172.16.107.136:5174/floors";
-let bobineEsterneApiPath = "http://172.16.107.136:5174/bobineEsterne";
+// let missionsApiPath = "http://172.16.107.136:5174/missions";
+// let bobineApiPath = "http://172.16.107.136:5174/bobine";
+// let floorsApiPath = "http://172.16.107.136:5174/floors";
+// let bobineEsterneApiPath = "http://172.16.107.136:5174/bobineEsterne";
 
 let forkliftPath = "./models/Forklift.fbx";
 let bobinaPath = "./models/bobina2.fbx";
@@ -1041,13 +1041,13 @@ function showForm() {
   generateBtn.disabled = true;
 
   sendBtn.addEventListener("click", async () => {
-    navbar.style.visibility = "visible";
     let text = await spawnBobina(textArea.value);
-
+    
     if (text) {
       message.textContent = text;
       div.appendChild(message);
     } else {
+      navbar.style.visibility = "visible";
       unloadBtn.disabled = false;
       document.body.removeChild(div);
     }
@@ -1226,12 +1226,10 @@ function loadForklift() {
 }
 
 async function spawnBobina(id) {
-  console.log(id);
   if (!id) {
     return "Id bobina non inserito";
   }
   let bobina = (await loadJson(bobineEsterneApiPath, "id", id))[0];
-  console.log(bobina);
 
   if (!bobina) {
     return "La bobina non esiste nel database";
@@ -1257,6 +1255,7 @@ async function spawnBobina(id) {
   newBobina.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
 
   forkLift.add(newBobina);
+  fork.attach(newBobina);
   isForkliftLoaded = true;
 
   currentBobina = bobina;
