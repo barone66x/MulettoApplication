@@ -35,15 +35,15 @@ const inputMovement = {
 let inputForkMovement = 0;
 let forkSpeed = 0.02;
 
-let floorsJsonPath = "./floor.json";
-let bobineJsonPath = "./bobine.json";
-let missionsJsonPath = "./missions.json";
-let bobineEsterneJsonPath = "./bobineEsterne.json";
+let floorsApiPath = "./floor.json";
+let bobineApiPath = "./bobine.json";
+let missionsApiPath = "./missions.json";
+let bobineEsterneApiPath = "./bobineEsterne.json";
 
-let missionsApiPath = "http://172.16.107.136:5174/missions";
-let bobineApiPath = "http://172.16.107.136:5174/bobine";
-let floorsApiPath = "http://172.16.107.136:5174/floors";
-let bobineEsterneApiPath = "http://172.16.107.136:5174/bobineEsterne";
+// let missionsApiPath = "http://172.16.107.136:5174/missions";
+// let bobineApiPath = "http://172.16.107.136:5174/bobine";
+// let floorsApiPath = "http://172.16.107.136:5174/floors";
+// let bobineEsterneApiPath = "http://172.16.107.136:5174/bobineEsterne";
 
 let forkliftPath = "./models/Forklift.fbx";
 let bobinaPath = "./models/bobina2.fbx";
@@ -87,6 +87,9 @@ missions = await loadJson(missionsApiPath);
 let currentArea; //json area
 let currentBobina; //json bobina
 let currentBobinaModel; //modello 3d bobina
+
+const currentBobinaJsons = [];
+const currentBobinaModels = [];
 
 let currentBobinaOffsetX;
 let currentBobinaOffsetY;
@@ -434,11 +437,7 @@ function animate() {
 
   floorCollision();
   if (!isForkliftLoaded) {
-    if (!bobinaCollision()) {
-      if (currentBobinaModel) {
-        backToNormalColor();
-      }
-    }
+    bobinaCollision()
   }
 
   renderer.render(scene, currentCamera);
@@ -767,51 +766,38 @@ function floorCollision() {
 function bobinaCollision() {
   let trovato = false;
 
+  while(currentBobinaModels.length > 0) {
+    currentBobinaJsons.shift();
+    let model = currentBobinaModels.shift();
+    model.children[0].material.color.copy(oldBobinaColors[0]);
+    model.children[1].material.color.copy(oldBobinaColors[1]);
+  }
+  
   bobinaPolygons.forEach((bobina) => {
     if (isInArea(bobina)) {
-      let currentBobina2 = bobine.find((x) => x.id == bobina.name);
-      const collidedBobinaModel = scene.children.find(
-        (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
-      );
-      if (checkHeight(currentBobina2, collidedBobinaModel)) {
-        currentBobina = currentBobina2;
+
+      const collidedBobinaJson = bobine.find((x) => x.id == bobina.name);
+      const collidedBobinaModel = scene.children.find((figlio) => figlio.name == bobina.name && figlio.tipo == "bobina");
+      
+      if (checkHeight(collidedBobinaJson, collidedBobinaModel)) {
         trovato = true;
-        if (collidedBobinaModel != currentBobinaModel) {
-          if (currentBobinaModel) {
-            currentBobinaModel.children[0].material.color.copy(
-              oldBobinaColors[0]
-            );
-            currentBobinaModel.children[1].material.color.copy(
-              oldBobinaColors[1]
-            );
-            currentBobinaModel = null;
-            oldBobinaColors = [];
-          }
+        currentBobinaJsons.push(collidedBobinaJson);
+        currentBobinaModels.push(collidedBobinaModel);
+        let i = 0;
+        collidedBobinaModel.children.forEach((x) => {
+          oldBobinaColors[i] = (x.material.color.clone());
+          i += 1;
+          x.material.color.setHex(0xffff00);
+        });
 
-          currentBobinaModel = scene.children.find(
-            (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
-          );
-          if (!currentBobinaModel) {
-            currentBobinaModel = forkLift.children.find(
-              (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
-            );
-          }
-
-          currentBobinaModel.children.forEach((x) => {
-            oldBobinaColors.push(x.material.color.clone());
-
-            x.material.color.setHex(0xffff00);
-          });
-        }
       }
     }
   });
-
+      
   if (trovato == true) {
     changeBobinaLabel();
     loadBtn.disabled = false;
   } else {
-    currentBobina = "";
     bobinaLabel.innerHTML = "";
     loadBtn.disabled = true;
   }
@@ -819,13 +805,15 @@ function bobinaCollision() {
 }
 
 function changeBobinaLabel() {
-  bobinaLabel.innerHTML =
-    "bobina id: " +
-    currentBobina.id +
-    "<br> bobina depth: " +
-    currentBobina.depth +
-    "<br>bobina diameter: " +
-    currentBobina.base;
+  let res = "";
+  let br = "";
+  currentBobinaJsons.forEach(json => {    
+    res += br + "bobina id: " + json.id +
+      "<br> bobina depth: " + json.depth +
+      "<br>bobina diameter: " + json.base;
+    br = "<br>";
+  });
+  bobinaLabel.innerHTML = res;
 }
 
 function checkHeight(x, y) {
@@ -1200,29 +1188,26 @@ function unloadForklift() {
 }
 
 function loadForklift() {
-  let newBobina = scene.children.find(
-    (x) => x.name == currentBobina.id && x.type == "Group" && x.tipo == "bobina"
-  );
-  fork.attach(newBobina);
-  newBobina.rotation.y =
-    newBobina.rotation.y % (Math.PI / 2) > Math.PI / 4
-      ? Math.PI / 2
-      : -Math.PI / 2;
-  newBobina.position.x = 0;
-  removePolygon();
-  backToNormalColor();
-  isForkliftLoaded = true;
+  currentBobinaModels.forEach(model => {
+    fork.attach(model);
+    model.rotation.y = model.rotation.y % (Math.PI / 2) > Math.PI / 4 ? Math.PI / 2 : -Math.PI / 2;
+    model.position.x = 0;
+    removePolygon(); 
+       
+    model.children[0].material.color.copy(oldBobinaColors[0]);
+    model.children[1].material.color.copy(oldBobinaColors[1]);
 
-  if (currentMission) {
-    if (currentMission.bobine.find((x) => x == newBobina.name)) {
-      currentTarget = scene.children.find(
-        (x) => x.name == currentMission.destinationArea && x.tipo == "floor"
-      ).geometry.boundingSphere.center;
-      currentTarget = new Three.Vector3(currentTarget.x, 0, currentTarget.y);
-      // console.log(currentTarget);
-      // currentTarget = scene.children.find(x => x.name == currentMission.destinationArea && x.tipo == "floor").position;
+    isForkliftLoaded = true;
+  
+    if (currentMission) {
+      if (currentMission.bobine.find((x) => x == model.name)) {
+        currentTarget = scene.children.find(
+          (x) => x.name == currentMission.destinationArea && x.tipo == "floor"
+        ).geometry.boundingSphere.center;
+        currentTarget = new Three.Vector3(currentTarget.x, 0, currentTarget.y);
+      }
     }
-  }
+  });
 }
 
 async function spawnBobina(id) {
