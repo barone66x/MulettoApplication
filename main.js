@@ -648,8 +648,8 @@ function generateBobinaPolygon(center, bobina) {
   let polygon;
 
   if (bobina.isStanding) {
-    let halfBase = bobina.base / 2;
-    let halfHeigth = bobina.height / 2;
+    let halfBase = bobina.base / 2 * 0.8;
+    let halfHeigth = bobina.height / 2 * 0.8;
     polygon = new dc.Polygon(center, [
       new Point(halfBase, halfHeigth),
       new Point(-halfBase, halfHeigth),
@@ -697,7 +697,6 @@ function generateBobinaPolygon(center, bobina) {
 }
 
 function removePolygon() {
-  let indexToRemove;
   let forkArea = new dc.Polygon(
     new Point(forkLift.position.x, forkLift.position.z),
     [
@@ -735,12 +734,12 @@ function removePolygon() {
       ),
     ]
   );
+
   bobinaPolygons.forEach((x) => {
     if (dc.polygonInPolygon(x, forkArea)) {
-      indexToRemove = bobinaPolygons.indexOf(x);
+      bobinaPolygons.splice(bobinaPolygons.indexOf(x), 1);
     }
   });
-  bobinaPolygons.splice(indexToRemove, 1);
 }
 
 function floorCollision() {
@@ -761,6 +760,7 @@ function floorCollision() {
     currentArea = "";
     floorLabel.innerHTML = "";
   }
+  changeBobinaLabel();
 }
 
 function bobinaCollision() {
@@ -806,12 +806,12 @@ function bobinaCollision() {
 
 function changeBobinaLabel() {
   let res = "";
-  let br = "";
+  let br = (floorLabel.innerHTML == "") ? "" : "<br>";
   currentBobinaJsons.forEach(json => {    
     res += br + "bobina id: " + json.id +
       "<br> bobina depth: " + json.depth +
       "<br>bobina diameter: " + json.base;
-    br = "<br>";
+    br = "<br><br>";
   });
   bobinaLabel.innerHTML = res;
 }
@@ -1143,48 +1143,53 @@ function changeCamera() {
 //#region interazione bobine
 
 function unloadForklift() {
-  let bobina = fork.children[fork.children.length - 1];
 
-  scene.attach(bobina);
+  let i = 0;
+  currentBobinaModels.forEach(model => {
+    scene.attach(model);
 
-  let rotation = new Three.Vector3();
-  bobina.getWorldDirection(rotation);
-
-  rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x));
-
-  currentBobina.position = { x: bobina.position.x, y: bobina.position.z };
-  currentBobina.rotation = rotation - 90;
-
-  currentBobina.floorId = currentArea.id ? currentArea.id : 0;
-  generateBobinaPolygon(
-    new Point(bobina.position.x, bobina.position.z),
-    currentBobina
-  );
-  bobine.push(currentBobina);
-  isForkliftLoaded = false;
-  if (
-    currentMission &&
-    currentArea.id == currentMission.destinationArea &&
-    bobina.name == currentMission.bobine[0]
-  ) {
-    currentMission.bobine.shift();
-    if (currentMission.bobine.length == 0) {
-      missions.splice(missions.indexOf(currentMission), 1);
-      currentMission = undefined;
-      currentTarget = forkLift.position;
-      arrow.visible = false;
-      targetArrow.visible = false;
-      missionBtn.disabled = false;
-      abortlMissionBtn.disabled = true;
-      showPopup("MISSIONE COMPLETATA");
+    let rotation = new Three.Vector3();
+    model.getWorldDirection(rotation);
+  
+    rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x));
+  
+    currentBobinaJsons[i].position = { x: model.position.x, y: model.position.z };
+    currentBobinaJsons[i].rotation = rotation - 90;
+  
+    currentBobinaJsons[i].floorId = currentArea.id ? currentArea.id : 0;
+    generateBobinaPolygon(
+      new Point(model.position.x, model.position.z),
+      currentBobinaJsons[i]
+    );
+    
+    let index;
+    if (
+      currentMission &&
+      currentArea.id == currentMission.destinationArea &&
+      (index = currentMission.bobine.indexOf(x => x == model.name)) >= 0
+      ) {
+      console.log("a");
+      currentMission.bobine.splice(index, 1);
+      if (currentMission.bobine.length == 0) {
+        missions.splice(missions.indexOf(currentMission), 1);
+        currentMission = undefined;
+        currentTarget = forkLift.position;
+        arrow.visible = false;
+        targetArrow.visible = false;
+        missionBtn.disabled = false;
+        abortlMissionBtn.disabled = true;
+        showPopup("MISSIONE COMPLETATA");
+      }
     }
-  }
+    
+    if (currentMission) {
+      currentTarget = scene.children.find((x) => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
+    }
 
-  if (currentMission) {
-    currentTarget = scene.children.find(
-      (x) => x.name == currentMission.bobine[0] && x.tipo == "bobina"
-    ).position;
-  }
+    i +=1;
+  });
+
+  isForkliftLoaded = false;
 }
 
 function loadForklift() {
@@ -1193,7 +1198,7 @@ function loadForklift() {
     model.rotation.y = model.rotation.y % (Math.PI / 2) > Math.PI / 4 ? Math.PI / 2 : -Math.PI / 2;
     model.position.x = 0;
     removePolygon(); 
-       
+
     model.children[0].material.color.copy(oldBobinaColors[0]);
     model.children[1].material.color.copy(oldBobinaColors[1]);
 
@@ -1201,9 +1206,7 @@ function loadForklift() {
   
     if (currentMission) {
       if (currentMission.bobine.find((x) => x == model.name)) {
-        currentTarget = scene.children.find(
-          (x) => x.name == currentMission.destinationArea && x.tipo == "floor"
-        ).geometry.boundingSphere.center;
+        currentTarget = scene.children.find((x) => x.name == currentMission.destinationArea && x.tipo == "floor").geometry.boundingSphere.center;
         currentTarget = new Three.Vector3(currentTarget.x, 0, currentTarget.y);
       }
     }
