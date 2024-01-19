@@ -40,10 +40,10 @@ let bobineApiPath = "./bobine.json";
 let missionsApiPath = "./missions.json";
 let bobineEsterneApiPath = "./bobineEsterne.json";
 
-// let missionsApiPath = "http://172.16.107.136:5174/missions";
-// let bobineApiPath = "http://172.16.107.136:5174/bobine";
-// let floorsApiPath = "http://172.16.107.136:5174/floors";
-// let bobineEsterneApiPath = "http://172.16.107.136:5174/bobineEsterne";
+// let missionsApiPath = "http://172.16.107.160:5174/missions";
+// let bobineApiPath = "http://172.16.107.160:5174/bobine";
+// let floorsApiPath = "http://172.16.107.160:5174/floors";
+// let bobineEsterneApiPath = "http://172.16.107.160:5174/bobineEsterne";
 
 let forkliftPath = "./models/Forklift.fbx";
 let bobinaPath = "./models/bobina2.fbx";
