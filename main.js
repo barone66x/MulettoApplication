@@ -366,8 +366,7 @@ const forkCollisionBox = new Three.Mesh(
   new Three.MeshPhongMaterial({ side: Three.DoubleSide, color: "#5555ff" })
 );
 //AREA FORCHE
-forkLift.add(forkCollisionBox);
-
+// forkLift.add(forkCollisionBox);
 
 forkCollisionBox.rotation.x = -Math.PI/2;
 
@@ -654,8 +653,8 @@ function generateBobinaPolygon(center, bobina) {
   let polygon;
 
   if (bobina.isStanding) {
-    let halfBase = bobina.base / 2 * 0.8;
-    let halfHeigth = bobina.height / 2 * 0.8;
+    let halfBase = bobina.base;
+    let halfHeigth = bobina.height;
     polygon = new dc.Polygon(center, [
       new Point(halfBase, halfHeigth),
       new Point(-halfBase, halfHeigth),
@@ -666,22 +665,22 @@ function generateBobinaPolygon(center, bobina) {
     polygon = new dc.Polygon(center, [
       rotateOnAxis(
         new Point(0, 0),
-        new Point(0, bobina.base / 2),
+        new Point(0, bobina.base),
         bobina.rotation
       ),
       rotateOnAxis(
         new Point(0, 0),
-        new Point(0, -bobina.base / 2),
+        new Point(0, -bobina.base),
         bobina.rotation
       ),
       rotateOnAxis(
         new Point(0, 0),
-        new Point(bobina.depth / 2, bobina.base / 2),
+        new Point(bobina.depth * 2, bobina.base),
         bobina.rotation
       ),
       rotateOnAxis(
         new Point(0, 0),
-        new Point(bobina.depth / 2, -bobina.base / 2),
+        new Point(bobina.depth * 2, -bobina.base),
         bobina.rotation
       ),
     ]);
@@ -691,15 +690,15 @@ function generateBobinaPolygon(center, bobina) {
   bobinaPolygons.push(polygon);
 
   //HELPER BOBINA
-  polygon.calcPoints.forEach((point) => {
-    const helper = new Three.Mesh(
-      new Three.BoxGeometry(0.5, 10, 0.5),
-      new Three.MeshNormalMaterial()
-    );
-    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
-    helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
-    scene.add(helper);
-  });
+  // polygon.calcPoints.forEach((point) => {
+  //   const helper = new Three.Mesh(
+  //     new Three.BoxGeometry(0.5, 10, 0.5),
+  //     new Three.MeshNormalMaterial()
+  //   );
+  //   helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+  //   helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
+  //   scene.add(helper);
+  // });
 }
 
 function removePolygon() {
