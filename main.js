@@ -1,9 +1,8 @@
 "use strict";
 import * as Three from "three";
 import "./style.css";
-import { ArcballControls } from "three/examples/jsm/controls/ArcballControls";
-import { ShapeGeometry } from "three/src/geometries/ShapeGeometry";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { pointInPolygon } from "detect-collisions";
 import * as dc from "detect-collisions";
 
@@ -45,9 +44,10 @@ let bobineEsterneApiPath = "./bobineEsterne.json";
 // let floorsApiPath = "http://172.16.107.160:5174/floors";
 // let bobineEsterneApiPath = "http://172.16.107.160:5174/bobineEsterne";
 
-let forkliftPath = "./models/Forklift.fbx";
-let bobinaPath = "./models/bobina2.fbx";
+let forkliftPath = "./models/Forklift.glb";
+let bobinaPath = "./models/bobina.glb";
 let arrowPath = "./models/arrow.fbx";
+let mapPath = "./models/HalleInnen.fbx";
 let floors = [];
 let bobine = [];
 let missions = [];
@@ -110,13 +110,13 @@ const skyCamera = new Three.PerspectiveCamera(
   5000 / worldScale
 );
 
-forkLiftCamera.position.z -= 0.5 / worldScale;
-forkLiftCamera.position.y -= 0.75 / worldScale;
+forkLiftCamera.position.z = 2;
+forkLiftCamera.position.y = 3;
 
-skyCamera.position.x = 0 / worldScale;
-skyCamera.position.y = 10 / worldScale;
-skyCamera.position.z = 0;
+skyCamera.position.y = 30;
 skyCamera.lookAt(new Three.Vector3(0, 0, 0));
+skyCamera.position.x = 0;
+skyCamera.position.z = 0;
 
 const sideCamera = new Three.PerspectiveCamera(
   70,
@@ -125,10 +125,10 @@ const sideCamera = new Three.PerspectiveCamera(
   5000 / worldScale
 );
 
-sideCamera.position.x = -10 / worldScale;
-sideCamera.position.y = 0 / worldScale;
+sideCamera.position.x = -25;
 sideCamera.position.z = 0;
 sideCamera.lookAt(new Three.Vector3(0, 0, 0));
+sideCamera.position.y = 4;
 
 let currentCamera = forkLiftCamera;
 //#endregion
@@ -314,19 +314,18 @@ scene.add(plane);
 
 const forkLiftScale = 2;
 
-const forkLift = await loadFbx(forkliftPath);
+const forkLift = await loadGLTF(forkliftPath);
+
 scene.add(forkLift);
-forkLift.position.y = -22 * forkLiftScale * (worldScale / 0.02);
-forkLift.scale.multiplyScalar(worldScale * forkLiftScale);
 forkLift.rotation.z = Math.PI;
 forkLift.add(forkLiftCamera);
 forkLift.add(skyCamera);
 forkLift.add(sideCamera);
 const forkCollisionBoxPoints = [
-  new Point(-1.6, 3.2),
-  new Point(1.6, 3.2),
-  new Point(1, 0.7),
-  new Point(-1, 0.7),
+  new Point(-3, 3.7),
+  new Point(3, 3.7),
+  new Point(2, -2.3),
+  new Point(-2, -2.3),
 ];
 let fork = forkLift.getObjectByName("Fork");
 // fork = forkLift.children.find((x) => x.name = "Fork");
@@ -367,14 +366,15 @@ const forkCollisionBox = new Three.Mesh(
   new Three.MeshPhongMaterial({ side: Three.DoubleSide, color: "#5555ff" })
 );
 //AREA FORCHE
-// forkLift.add(forkCollisionBox);
+forkLift.add(forkCollisionBox);
 
-forkCollisionBox.scale.divideScalar(worldScale);
-forkCollisionBox.rotation.x = -Math.PI / 2;
-forkCollisionBox.position.y -= 2.15 / worldScale;
 
-forkCollisionBox.position.x = forkCollisionBoxPoints[0].x / worldScale;
-forkCollisionBox.position.z = -forkCollisionBoxPoints[0].y / worldScale;
+forkCollisionBox.rotation.x = -Math.PI/2;
+
+forkCollisionBox.position.y = 0.1;
+
+forkCollisionBox.position.x = forkCollisionBoxPoints[0].x;
+forkCollisionBox.position.z = -forkCollisionBoxPoints[0].y;
 
 // #endregion
 
@@ -417,6 +417,11 @@ targetArrow.rotation.x = -Math.PI / 2;
 scene.add(targetArrow);
 
 //#endregion
+
+const map = await loadFbx(mapPath);
+scene.add(map);
+map.scale.multiplyScalar(worldScale * 2);
+map.rotation.x = Math.PI;
 
 //ANIMATE;
 function animate() {
@@ -523,13 +528,14 @@ function generateFloors() {
 
 async function generateBobine() {
   bobine.forEach(async (f) => {
-    const bobina = await loadFbx(bobinaPath);
+    const bobina = await loadGLTF(bobinaPath);
     let newCenter = new Point(f.position.x, f.position.y);
 
     bobina.scale.set(
-      worldScale * f.base,
-      worldScale * f.depth,
-      worldScale * f.height
+      
+      f.base * 2,
+      f.depth * 2,
+      f.height * 2
     );
     if (!f.isStanding) {
       bobina.rotation.z = -Math.PI / 2;
@@ -547,9 +553,9 @@ async function generateBobine() {
     bobina.tipo = "bobina"; //aggiungo il tipo del modello perchè lo utilizzerò in carica/scarica
 
     if (f.isStanding) {
-      bobina.position.y = -(f.depth / 2 - 0.04 * f.depth);
+      bobina.position.y = -(f.depth * 2);
     } else {
-      bobina.position.y = -(f.base / 2 - 0.1 * f.base);
+      bobina.position.y = -(f.base * 2);
     }
     generateBobinaPolygon(newCenter, f);
 
@@ -685,15 +691,15 @@ function generateBobinaPolygon(center, bobina) {
   bobinaPolygons.push(polygon);
 
   //HELPER BOBINA
-  // polygon.calcPoints.forEach((point) => {
-  //   const helper = new Three.Mesh(
-  //     new Three.BoxGeometry(0.5, 10, 0.5),
-  //     new Three.MeshNormalMaterial()
-  //   );
-  //   helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
-  //   helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
-  //   scene.add(helper);
-  // });
+  polygon.calcPoints.forEach((point) => {
+    const helper = new Three.Mesh(
+      new Three.BoxGeometry(0.5, 10, 0.5),
+      new Three.MeshNormalMaterial()
+    );
+    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+    helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
+    scene.add(helper);
+  });
 }
 
 function removePolygon() {
@@ -856,6 +862,21 @@ async function loadFbx(path) {
   }
   x.castShadow = false;
   x.receiveShadow = false;
+  return x;
+}
+
+async function loadGLTF(path) {
+  const gltfLoader = new GLTFLoader();
+  let x = new Three.Group();
+  let children = (await gltfLoader.loadAsync(path)).scene.children;
+
+  while(children.length != 0) {
+    x.add(children[0]);
+  }
+
+  x.castShadow = false;
+  x.receiveShadow = false;
+
   return x;
 }
 
@@ -1085,32 +1106,32 @@ function isInArea(area) {
       rotateOnAxis(
         new Point(0, 0),
         new Point(
-          forkCollisionBoxPoints[0].x * forkLiftScale,
-          -forkCollisionBoxPoints[0].y * forkLiftScale
+          forkCollisionBoxPoints[0].x,
+          -forkCollisionBoxPoints[0].y
         ),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
       rotateOnAxis(
         new Point(0, 0),
         new Point(
-          forkCollisionBoxPoints[1].x * forkLiftScale,
-          -forkCollisionBoxPoints[1].y * forkLiftScale
+          forkCollisionBoxPoints[1].x,
+          -forkCollisionBoxPoints[1].y
         ),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
       rotateOnAxis(
         new Point(0, 0),
         new Point(
-          forkCollisionBoxPoints[2].x * forkLiftScale,
-          -forkCollisionBoxPoints[2].y * forkLiftScale
+          forkCollisionBoxPoints[2].x,
+          -forkCollisionBoxPoints[2].y
         ),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
       rotateOnAxis(
         new Point(0, 0),
         new Point(
-          forkCollisionBoxPoints[3].x * forkLiftScale,
-          -forkCollisionBoxPoints[3].y * forkLiftScale
+          forkCollisionBoxPoints[3].x,
+          -forkCollisionBoxPoints[3].y
         ),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
