@@ -690,15 +690,15 @@ function generateBobinaPolygon(center, bobina) {
   bobinaPolygons.push(polygon);
 
   //HELPER BOBINA
-  // polygon.calcPoints.forEach((point) => {
-  //   const helper = new Three.Mesh(
-  //     new Three.BoxGeometry(0.5, 10, 0.5),
-  //     new Three.MeshNormalMaterial()
-  //   );
-  //   helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
-  //   helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
-  //   scene.add(helper);
-  // });
+  polygon.calcPoints.forEach((point) => {
+    const helper = new Three.Mesh(
+      new Three.BoxGeometry(0.5, 10, 0.5),
+      new Three.MeshNormalMaterial()
+    );
+    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+    helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
+    scene.add(helper);
+  });
 }
 
 function removePolygon() {
@@ -774,8 +774,8 @@ function bobinaCollision() {
   while(currentBobinaModels.length > 0) {
     currentBobinaJsons.shift();
     let model = currentBobinaModels.shift();
-    model.children[0].material.color.copy(oldBobinaColors[0]);
-    model.children[1].material.color.copy(oldBobinaColors[1]);
+    model.children[0].material.copy(oldBobinaColors[0]);
+    model.children[2].material.copy(oldBobinaColors[2]);
   }
   
   bobinaPolygons.forEach((bobina) => {
@@ -790,9 +790,9 @@ function bobinaCollision() {
         currentBobinaModels.push(collidedBobinaModel);
         let i = 0;
         collidedBobinaModel.children.forEach((x) => {
-          oldBobinaColors[i] = (x.material.color.clone());
+          oldBobinaColors[i] = (x.material.clone());
           i += 1;
-          x.material.color.setHex(0xffff00);
+          x.material.color.setHex(0x00ff00);
         });
 
       }
@@ -1165,17 +1165,16 @@ function changeCamera() {
 function unloadForklift() {
 
   let i = 0;
-  console.log(currentBobinaModels.length);
   currentBobinaModels.forEach(model => {
     scene.attach(model);
 
     let rotation = new Three.Vector3();
     model.getWorldDirection(rotation);
   
-    rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x));
+    rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x)) - 90;
   
     currentBobinaJsons[i].position = { x: model.position.x, y: model.position.z };
-    currentBobinaJsons[i].rotation = rotation - 90;
+    currentBobinaJsons[i].rotation = rotation;
   
     currentBobinaJsons[i].floorId = currentArea.id ? currentArea.id : 0;
 
@@ -1223,8 +1222,8 @@ function loadForklift() {
     model.position.x = 0;
     removePolygon(); 
 
-    model.children[0].material.color.copy(oldBobinaColors[0]);
-    model.children[1].material.color.copy(oldBobinaColors[1]);
+    model.children[0].material.copy(oldBobinaColors[0]);
+    model.children[2].material.copy(oldBobinaColors[2]);
 
     isForkliftLoaded = true;
   
@@ -1276,7 +1275,7 @@ async function spawnBobina(id) {
 
   let i = 0;
   model.children.forEach((x) => {
-    oldBobinaColors[i] = (x.material.color.clone());
+    oldBobinaColors[i] = (x.material.clone());
     i += 1;
   });
   
@@ -1371,7 +1370,6 @@ async function loadJson(path, field, filter) {
   let res = await (await fetch(path)).json();
   if (filter && field) {
     res = res.filter((x) => x[field] == filter);
-    console.log(res);
   }
 
   return res;
