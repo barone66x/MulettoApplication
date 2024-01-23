@@ -417,10 +417,10 @@ scene.add(targetArrow);
 
 //#endregion
 
-const map = await loadFbx(mapPath);
-scene.add(map);
-map.scale.multiplyScalar(worldScale * 2);
-map.rotation.x = Math.PI;
+let rack = await loadGLTF("./models/rack.glb");
+scene.add(rack);
+rack.rotation.x += Math.PI;
+
 
 //ANIMATE;
 function animate() {
@@ -690,15 +690,15 @@ function generateBobinaPolygon(center, bobina) {
   bobinaPolygons.push(polygon);
 
   //HELPER BOBINA
-  polygon.calcPoints.forEach((point) => {
-    const helper = new Three.Mesh(
-      new Three.BoxGeometry(0.5, 10, 0.5),
-      new Three.MeshNormalMaterial()
-    );
-    helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
-    helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
-    scene.add(helper);
-  });
+  // polygon.calcPoints.forEach((point) => {
+  //   const helper = new Three.Mesh(
+  //     new Three.BoxGeometry(0.5, 10, 0.5),
+  //     new Three.MeshNormalMaterial()
+  //   );
+  //   helper.position.set(polygon.pos.x + point.x, 0, polygon.pos.y + point.y);
+  //   helper.rotation.y = Three.MathUtils.degToRad(bobina.rotation);
+  //   scene.add(helper);
+  // });
 }
 
 function removePolygon() {
@@ -1163,6 +1163,7 @@ function changeCamera() {
 //#region interazione bobine
 
 function unloadForklift() {
+  let prova = new Three.Mesh();
 
   let i = 0;
   currentBobinaModels.forEach(model => {
@@ -1170,6 +1171,8 @@ function unloadForklift() {
 
     let rotation = new Three.Vector3();
     model.getWorldDirection(rotation);
+    console.log(model);
+    
   
     rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x)) - 90;
   
