@@ -381,6 +381,49 @@ forkCollisionBox.position.z = -forkCollisionBoxPoints[0].y;
 const defaultBobinaModel = await loadGLTF(bobinaPath);
 const defaultRackModel = await loadGLTF(rackPath);
 
+//#region Muri Walls Soffitto
+let wallTexture = new Three.TextureLoader().load("textures/Concrete_736.jpg");
+  wallTexture.wrapS = Three.RepeatWrapping;
+  wallTexture.wrapT = Three.RepeatWrapping;
+  wallTexture.repeat.set(3,2);
+
+const wall1 = new Three.Mesh(new Three.BoxGeometry(200,40,1), new Three.MeshBasicMaterial({map : wallTexture}));
+wall1.position.y = -20;
+wall1.position.z = 100;
+scene.add(wall1);
+const wall2 = wall1.clone();
+wall2.position.y = -20;
+wall2.position.z = -100;
+scene.add(wall2);
+const wall3 = wall1.clone();
+wall3.position.y = -20;
+wall3.position.x = -100;
+wall3.position.z -= 100;
+wall3.rotation.y = Math.PI/2;
+scene.add(wall3);
+const wall4 = wall1.clone();
+wall4.position.y = -20;
+wall4.position.x = 100;
+wall4.position.z -= 100;
+wall4.rotation.y = Math.PI/2;
+scene.add(wall4);
+
+let soffittoTexture = new Three.TextureLoader().load("textures/soffitto.png");
+  soffittoTexture.wrapS = Three.RepeatWrapping;
+  soffittoTexture.wrapT = Three.RepeatWrapping;
+  soffittoTexture.repeat.set(7,5);
+
+const soffitto = new Three.Mesh(new Three.BoxGeometry(200,1,200), new Three.MeshBasicMaterial({map : soffittoTexture}));
+scene.add(soffitto);
+soffitto.position.y = -40;
+
+
+
+
+//#endregion
+
+
+
 // #endregion
 
 //inizialmente disabilito il bottone del carica/scarica bobina
@@ -502,6 +545,9 @@ function generateFloors() {
   texture.wrapS = Three.RepeatWrapping;
   texture.wrapT = Three.RepeatWrapping;
   texture.repeat.set(0.3, 0.3);
+
+
+  
 
   floors.forEach((floor) => {
     let floorShape = new Three.Shape();
