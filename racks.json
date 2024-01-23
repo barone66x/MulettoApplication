@@ -1,0 +1,23 @@
+[
+  {
+    "position": {
+      "x": 10,
+      "y": 5
+    },
+    "rotation": 45
+  },
+  {
+    "position": {
+      "x": 60,
+      "y": 30
+    },
+    "rotation": 60
+  },
+  {
+    "position": {
+      "x": -60,
+      "y": -50
+    },
+    "rotation": 90
+  }
+]

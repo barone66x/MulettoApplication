@@ -2,7 +2,7 @@
 import * as Three from "three";
 import "./style.css";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { pointInPolygon } from "detect-collisions";
 import * as dc from "detect-collisions";
 
@@ -32,12 +32,13 @@ const inputMovement = {
 };
 
 let inputForkMovement = 0;
-let forkSpeed = 0.02;
+let forkSpeed = 0.05;
 
 let floorsApiPath = "./floor.json";
 let bobineApiPath = "./bobine.json";
 let missionsApiPath = "./missions.json";
 let bobineEsterneApiPath = "./bobineEsterne.json";
+let racksApiPath = "./racks.json";
 
 // let missionsApiPath = "http://172.16.107.160:5174/missions";
 // let bobineApiPath = "http://172.16.107.160:5174/bobine";
@@ -48,12 +49,14 @@ let forkliftPath = "./models/Forklift.glb";
 let bobinaPath = "./models/bobina.glb";
 let arrowPath = "./models/arrow.fbx";
 let mapPath = "./models/HalleInnen.fbx";
+let rackPath = "./models/rack.glb";
 let floors = [];
 let bobine = [];
 let missions = [];
 let floorPolygons = [];
 let bobinaPolygons = [];
 let oldBobinaColors = [];
+let racks = [];
 
 let currentMission;
 let rotationSpeed = 0.05;
@@ -83,6 +86,7 @@ scene.add(new Three.AmbientLight());
 floors = await loadJson(floorsApiPath);
 bobine = await loadJson(bobineApiPath);
 missions = await loadJson(missionsApiPath);
+racks = await loadJson(racksApiPath);
 
 let currentArea; //json area
 let currentBobina; //json bobina
@@ -194,7 +198,6 @@ const abortlMissionBtn = addToNavbar("Abort mission", () => {
   abortlMissionBtn.disabled = true;
 });
 abortlMissionBtn.disabled = true;
-
 
 addControls();
 
@@ -368,12 +371,15 @@ const forkCollisionBox = new Three.Mesh(
 //AREA FORCHE
 // forkLift.add(forkCollisionBox);
 
-forkCollisionBox.rotation.x = -Math.PI/2;
+forkCollisionBox.rotation.x = -Math.PI / 2;
 
 forkCollisionBox.position.y = 0.1;
 
 forkCollisionBox.position.x = forkCollisionBoxPoints[0].x;
 forkCollisionBox.position.z = -forkCollisionBoxPoints[0].y;
+
+const defaultBobinaModel = await loadGLTF(bobinaPath);
+const defaultRackModel = await loadGLTF(rackPath);
 
 // #endregion
 
@@ -384,6 +390,7 @@ unloadBtn.disabled = true;
 
 generateFloors();
 generateBobine();
+generateRacks();
 
 document.body.appendChild(renderer.domElement);
 
@@ -417,11 +424,6 @@ scene.add(targetArrow);
 
 //#endregion
 
-let rack = await loadGLTF("./models/rack.glb");
-scene.add(rack);
-rack.rotation.x += Math.PI;
-
-
 //ANIMATE;
 function animate() {
   arrow.lookAt(currentTarget.clone().multiply(new Three.Vector3(-1, 1, 1)));
@@ -435,13 +437,12 @@ function animate() {
   forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
   forkLift.translateZ(-inputMovement.movement * translationSpeed);
   if (forkCheckPosition()) {
-    fork.position.y +=
-      ((inputForkMovement * forkSpeed) / worldScale) * forkLiftScale;
+    fork.position.y += inputForkMovement * forkSpeed;
   }
 
   floorCollision();
   if (!isForkliftLoaded) {
-    bobinaCollision()
+    bobinaCollision();
   }
 
   renderer.render(scene, currentCamera);
@@ -527,15 +528,10 @@ function generateFloors() {
 
 async function generateBobine() {
   bobine.forEach(async (f) => {
-    const bobina = await loadGLTF(bobinaPath);
+    const bobina = defaultBobinaModel.clone();
     let newCenter = new Point(f.position.x, f.position.y);
 
-    bobina.scale.set(
-      
-      f.base * 2,
-      f.depth * 2,
-      f.height * 2
-    );
+    bobina.scale.set(f.base * 2, f.depth * 2, f.height * 2);
     if (!f.isStanding) {
       bobina.rotation.z = -Math.PI / 2;
       newCenter = rotateOnAxis(
@@ -559,6 +555,18 @@ async function generateBobine() {
     generateBobinaPolygon(newCenter, f);
 
     scene.add(bobina);
+  });
+}
+
+async function generateRacks() {
+  racks.forEach((f) => {
+    const rack = defaultRackModel.clone();
+    rack.position.x = f.position.x;
+    rack.position.z = f.position.y;
+    rack.rotation.x = Math.PI;
+    rack.rotation.y = Three.MathUtils.degToRad(f.rotation);
+    rack.tipo = "rack";
+    scene.add(rack);
   });
 }
 
@@ -663,11 +671,7 @@ function generateBobinaPolygon(center, bobina) {
     ]);
   } else {
     polygon = new dc.Polygon(center, [
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(0, bobina.base),
-        bobina.rotation
-      ),
+      rotateOnAxis(new Point(0, 0), new Point(0, bobina.base), bobina.rotation),
       rotateOnAxis(
         new Point(0, 0),
         new Point(0, -bobina.base),
@@ -771,34 +775,41 @@ function floorCollision() {
 function bobinaCollision() {
   let trovato = false;
 
-  while(currentBobinaModels.length > 0) {
+  while (currentBobinaModels.length > 0) {
     currentBobinaJsons.shift();
     let model = currentBobinaModels.shift();
-    model.children[0].material.copy(oldBobinaColors[0]);
-    model.children[2].material.copy(oldBobinaColors[2]);
+
+    // model.copy(defaultBobinaModel);
+
+    let indice = 0;
+    while (indice < model.children.length) {
+      model.children[indice].material.copy(oldBobinaColors[indice]);
+      indice += 1;
+    }
   }
-  
+
   bobinaPolygons.forEach((bobina) => {
     if (isInArea(bobina)) {
-
       const collidedBobinaJson = bobine.find((x) => x.id == bobina.name);
-      const collidedBobinaModel = scene.children.find((figlio) => figlio.name == bobina.name && figlio.tipo == "bobina");
-      
+      const collidedBobinaModel = scene.children.find(
+        (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
+      );
+
       if (checkHeight(collidedBobinaJson, collidedBobinaModel)) {
         trovato = true;
         currentBobinaJsons.push(collidedBobinaJson);
         currentBobinaModels.push(collidedBobinaModel);
         let i = 0;
         collidedBobinaModel.children.forEach((x) => {
-          oldBobinaColors[i] = (x.material.clone());
+          oldBobinaColors[i] = x.material.clone();
           i += 1;
+          x.material = x.material.clone();
           x.material.color.setHex(0x00ff00);
         });
-
       }
     }
   });
-      
+
   if (trovato == true) {
     changeBobinaLabel();
     loadBtn.disabled = false;
@@ -811,18 +822,22 @@ function bobinaCollision() {
 
 function changeBobinaLabel() {
   let res = "";
-  let br = (floorLabel.innerHTML == "") ? "" : "<br>";
-  currentBobinaJsons.forEach(json => {    
-    res += br + "bobina id: " + json.id +
-      "<br> bobina depth: " + json.depth +
-      "<br>bobina diameter: " + json.base;
+  let br = floorLabel.innerHTML == "" ? "" : "<br>";
+  currentBobinaJsons.forEach((json) => {
+    res +=
+      br +
+      "bobina id: " +
+      json.id +
+      "<br> bobina depth: " +
+      json.depth +
+      "<br>bobina diameter: " +
+      json.base;
     br = "<br><br>";
   });
   bobinaLabel.innerHTML = res;
 }
 
 function checkHeight(x, y) {
-
   let forkPosition = new Three.Vector3();
   let bobinaPosition = new Three.Vector3();
 
@@ -869,7 +884,7 @@ async function loadGLTF(path) {
   let x = new Three.Group();
   let children = (await gltfLoader.loadAsync(path)).scene.children;
 
-  while(children.length != 0) {
+  while (children.length != 0) {
     x.add(children[0]);
   }
 
@@ -1050,7 +1065,7 @@ function showForm() {
 
   sendBtn.addEventListener("click", async () => {
     let text = await spawnBobina(textArea.value);
-    
+
     if (text) {
       message.textContent = text;
       div.appendChild(message);
@@ -1104,34 +1119,22 @@ function isInArea(area) {
     [
       rotateOnAxis(
         new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[0].x,
-          -forkCollisionBoxPoints[0].y
-        ),
+        new Point(forkCollisionBoxPoints[0].x, -forkCollisionBoxPoints[0].y),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
       rotateOnAxis(
         new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[1].x,
-          -forkCollisionBoxPoints[1].y
-        ),
+        new Point(forkCollisionBoxPoints[1].x, -forkCollisionBoxPoints[1].y),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
       rotateOnAxis(
         new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[2].x,
-          -forkCollisionBoxPoints[2].y
-        ),
+        new Point(forkCollisionBoxPoints[2].x, -forkCollisionBoxPoints[2].y),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
       rotateOnAxis(
         new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[3].x,
-          -forkCollisionBoxPoints[3].y
-        ),
+        new Point(forkCollisionBoxPoints[3].x, -forkCollisionBoxPoints[3].y),
         Three.MathUtils.radToDeg(forkLift.rotation.y)
       ),
     ]
@@ -1166,22 +1169,24 @@ function unloadForklift() {
   let prova = new Three.Mesh();
 
   let i = 0;
-  currentBobinaModels.forEach(model => {
+  currentBobinaModels.forEach((model) => {
     scene.attach(model);
 
     let rotation = new Three.Vector3();
     model.getWorldDirection(rotation);
-    console.log(model);
-    
-  
-    rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x)) - 90;
-  
-    currentBobinaJsons[i].position = { x: model.position.x, y: model.position.z };
+
+    rotation =
+      Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x)) - 90;
+
+    currentBobinaJsons[i].position = {
+      x: model.position.x,
+      y: model.position.z,
+    };
     currentBobinaJsons[i].rotation = rotation;
-  
+
     currentBobinaJsons[i].floorId = currentArea.id ? currentArea.id : 0;
 
-    if (!bobine.includes(currentBobinaJsons[i])){
+    if (!bobine.includes(currentBobinaJsons[i])) {
       bobine.push(currentBobinaJsons[i]);
     }
 
@@ -1189,13 +1194,13 @@ function unloadForklift() {
       new Point(model.position.x, model.position.z),
       currentBobinaJsons[i]
     );
-    
+
     let index;
     if (
       currentMission &&
       currentArea.id == currentMission.destinationArea &&
       (index = currentMission.bobine.indexOf(model.name)) >= 0
-      ) {
+    ) {
       currentMission.bobine.splice(index, 1);
       if (currentMission.bobine.length == 0) {
         missions.splice(missions.indexOf(currentMission), 1);
@@ -1207,32 +1212,45 @@ function unloadForklift() {
         abortlMissionBtn.disabled = true;
         showPopup("MISSIONE COMPLETATA");
       }
-    }  
-    i +=1;
+    }
+    i += 1;
   });
-  
+
   if (currentMission) {
-    currentTarget = scene.children.find((x) => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
+    currentTarget = scene.children.find(
+      (x) => x.name == currentMission.bobine[0] && x.tipo == "bobina"
+    ).position;
   }
 
   isForkliftLoaded = false;
 }
 
 function loadForklift() {
-  currentBobinaModels.forEach(model => {
+  currentBobinaModels.forEach((model) => {
     fork.attach(model);
-    model.rotation.y = model.rotation.y % (Math.PI / 2) > Math.PI / 4 ? Math.PI / 2 : -Math.PI / 2;
+    model.rotation.y =
+      model.rotation.y % (Math.PI / 2) > Math.PI / 4
+        ? Math.PI / 2
+        : -Math.PI / 2;
     model.position.x = 0;
-    removePolygon(); 
+    removePolygon();
 
-    model.children[0].material.copy(oldBobinaColors[0]);
-    model.children[2].material.copy(oldBobinaColors[2]);
+
+    
+    // model.copy(defaultBobinaModel);
+    let indice = 0;
+    while (indice < model.children.length) {
+      model.children[indice].material.copy(oldBobinaColors[indice]);
+      indice += 1;
+    }
 
     isForkliftLoaded = true;
-  
+
     if (currentMission) {
       if (currentMission.bobine.find((x) => x == model.name)) {
-        currentTarget = scene.children.find((x) => x.name == currentMission.destinationArea && x.tipo == "floor").geometry.boundingSphere.center;
+        currentTarget = scene.children.find(
+          (x) => x.name == currentMission.destinationArea && x.tipo == "floor"
+        ).geometry.boundingSphere.center;
         currentTarget = new Three.Vector3(currentTarget.x, 0, currentTarget.y);
       }
     }
@@ -1240,7 +1258,6 @@ function loadForklift() {
 }
 
 async function spawnBobina(id) {
-  
   if (!id) {
     return "Id bobina non inserito";
   }
@@ -1248,11 +1265,11 @@ async function spawnBobina(id) {
   if (!bobina) {
     return "La bobina non esiste nel database";
   }
-  
+
   let model = await loadFbx(bobinaPath);
   model.name = bobina.id;
   model.tipo = "bobina";
-  
+
   model.scale.set(
     bobina.base / forkLiftScale,
     bobina.depth / forkLiftScale,
@@ -1266,7 +1283,9 @@ async function spawnBobina(id) {
   currentBobinaOffsetY = -2;
 
   model.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
-  model.position.y = -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) / (worldScale * forkLiftScale);
+  model.position.y =
+    -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) /
+    (worldScale * forkLiftScale);
   model.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
 
   forkLift.add(model);
@@ -1278,19 +1297,19 @@ async function spawnBobina(id) {
 
   let i = 0;
   model.children.forEach((x) => {
-    oldBobinaColors[i] = (x.material.clone());
+    oldBobinaColors[i] = x.material.clone();
     i += 1;
   });
-  
+
   changeBobinaLabel();
-  
+
   return;
 }
 
 function forkCheckPosition() {
   if (
-    (fork.position.y <= -1099.46337890625 && inputForkMovement < 0) ||
-    (fork.position.y > 720.5 && inputForkMovement > 0)
+    (fork.position.y <= 0 && inputForkMovement < 0) ||
+    (fork.position.y > 8.5 && inputForkMovement > 0)
   ) {
     return false;
   }
@@ -1379,8 +1398,8 @@ async function loadJson(path, field, filter) {
 }
 
 async function stressTest() {
-  const bobina = await loadFbx(bobinaPath);
-  bobina.scale.multiplyScalar(worldScale);
+  const bobina = await loadGLTF(bobinaPath);
+  // bobina.scale.multiplyScalar(worldScale);
   for (let i = 0; i < 50; i++) {
     for (let j = 0; j < 50; j++) {
       const x = bobina.clone();
