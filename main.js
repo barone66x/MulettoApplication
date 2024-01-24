@@ -48,8 +48,9 @@ let racksApiPath = "./racks.json";
 let forkliftPath = "./models/Forklift.glb";
 let bobinaPath = "./models/bobina.glb";
 let arrowPath = "./models/arrow.fbx";
-let mapPath = "./models/HalleInnen.fbx";
+let warehousePath = "./models/map.glb";
 let rackPath = "./models/rack.glb";
+
 let floors = [];
 let bobine = [];
 let missions = [];
@@ -309,7 +310,7 @@ texture.wrapT = Three.RepeatWrapping;
 texture.repeat.set(textureRep, textureRep);
 
 const plane = new Three.Mesh(
-  new Three.PlaneGeometry(200, 200),
+  new Three.PlaneGeometry(825, 300),
   new Three.MeshBasicMaterial({ map: texture })
 );
 plane.rotation.x = Math.PI / 2;
@@ -382,43 +383,40 @@ const defaultBobinaModel = await loadGLTF(bobinaPath);
 const defaultRackModel = await loadGLTF(rackPath);
 
 //#region Muri Walls Soffitto
-let wallTexture = new Three.TextureLoader().load("textures/Concrete_736.jpg");
-  wallTexture.wrapS = Three.RepeatWrapping;
-  wallTexture.wrapT = Three.RepeatWrapping;
-  wallTexture.repeat.set(3,2);
+// let wallTexture = new Three.TextureLoader().load("textures/Concrete_736.jpg");
+//   wallTexture.wrapS = Three.RepeatWrapping;
+//   wallTexture.wrapT = Three.RepeatWrapping;
+//   wallTexture.repeat.set(3,2);
 
-const wall1 = new Three.Mesh(new Three.BoxGeometry(200,40,1), new Three.MeshBasicMaterial({map : wallTexture}));
-wall1.position.y = -20;
-wall1.position.z = 100;
-scene.add(wall1);
-const wall2 = wall1.clone();
-wall2.position.y = -20;
-wall2.position.z = -100;
-scene.add(wall2);
-const wall3 = wall1.clone();
-wall3.position.y = -20;
-wall3.position.x = -100;
-wall3.position.z -= 100;
-wall3.rotation.y = Math.PI/2;
-scene.add(wall3);
-const wall4 = wall1.clone();
-wall4.position.y = -20;
-wall4.position.x = 100;
-wall4.position.z -= 100;
-wall4.rotation.y = Math.PI/2;
-scene.add(wall4);
+// const wall1 = new Three.Mesh(new Three.BoxGeometry(200,40,1), new Three.MeshBasicMaterial({map : wallTexture}));
+// wall1.position.y = -20;
+// wall1.position.z = 100;
+// scene.add(wall1);
+// const wall2 = wall1.clone();
+// wall2.position.y = -20;
+// wall2.position.z = -100;
+// scene.add(wall2);
+// const wall3 = wall1.clone();
+// wall3.position.y = -20;
+// wall3.position.x = -100;
+// wall3.position.z -= 100;
+// wall3.rotation.y = Math.PI/2;
+// scene.add(wall3);
+// const wall4 = wall1.clone();
+// wall4.position.y = -20;
+// wall4.position.x = 100;
+// wall4.position.z -= 100;
+// wall4.rotation.y = Math.PI/2;
+// scene.add(wall4);
 
-let soffittoTexture = new Three.TextureLoader().load("textures/soffitto.png");
-  soffittoTexture.wrapS = Three.RepeatWrapping;
-  soffittoTexture.wrapT = Three.RepeatWrapping;
-  soffittoTexture.repeat.set(7,5);
+// let soffittoTexture = new Three.TextureLoader().load("textures/soffitto.png");
+//   soffittoTexture.wrapS = Three.RepeatWrapping;
+//   soffittoTexture.wrapT = Three.RepeatWrapping;
+//   soffittoTexture.repeat.set(7,5);
 
-const soffitto = new Three.Mesh(new Three.BoxGeometry(200,1,200), new Three.MeshBasicMaterial({map : soffittoTexture}));
-scene.add(soffitto);
-soffitto.position.y = -40;
-
-
-
+// const soffitto = new Three.Mesh(new Three.BoxGeometry(200,1,200), new Three.MeshBasicMaterial({map : soffittoTexture}));
+// scene.add(soffitto);
+// soffitto.position.y = -40;
 
 //#endregion
 
@@ -466,6 +464,10 @@ targetArrow.rotation.x = -Math.PI / 2;
 scene.add(targetArrow);
 
 //#endregion
+
+const warehouse = await loadGLTF(warehousePath);
+warehouse.rotation.x = Math.PI;
+scene.add(warehouse);
 
 //ANIMATE;
 function animate() {
