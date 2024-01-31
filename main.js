@@ -26,14 +26,6 @@ class Mission {
   }
 }
 
-const inputMovement = {
-  movement: 0,
-  rotation: 0,
-};
-
-let inputForkMovement = 0;
-let forkSpeed = 0.05;
-
 let floorsApiPath = "./floor.json";
 let bobineApiPath = "./bobine.json";
 let missionsApiPath = "./missions.json";
@@ -60,8 +52,6 @@ let oldBobinaColors = [];
 let racks = [];
 
 let currentMission;
-let rotationSpeed = 0.05;
-let translationSpeed = 0.35;
 const worldScale = 0.002;
 
 let isForkliftLoaded = false;
@@ -199,81 +189,6 @@ const abortlMissionBtn = addToNavbar("Abort mission", () => {
   abortlMissionBtn.disabled = true;
 });
 abortlMissionBtn.disabled = true;
-
-addControls();
-
-function addControls() {
-  const span = document.createElement("span");
-  span.className = "col-4";
-
-  const controls = document.createElement("div");
-  controls.className = "col-12 col-sm-3 fixed-bottom px-4 py-3";
-  container.appendChild(controls);
-
-  const controlsT = document.createElement("div");
-  controlsT.className = "row";
-  controls.appendChild(controlsT);
-
-  const controlsM = document.createElement("div");
-  controlsM.className = "row";
-  controls.appendChild(controlsM);
-
-  const controlsB = document.createElement("div");
-  controlsB.className = "row";
-  controls.appendChild(controlsB);
-
-  const downBtn = document.createElement("button");
-  downBtn.className = "col-4 py-2 m-0";
-  downBtn.appendChild(document.createTextNode("↓"));
-
-  controlsB.appendChild(span);
-  controlsB.appendChild(downBtn);
-
-  const upBtn = document.createElement("button");
-  upBtn.className = "col-4 py-2 m-0";
-  upBtn.appendChild(document.createTextNode("↑"));
-  controlsT.appendChild(span.cloneNode());
-  controlsT.appendChild(upBtn);
-
-  const leftBtn = document.createElement("button");
-  leftBtn.className = "col-4 py-2 m-0";
-  leftBtn.appendChild(document.createTextNode("←"));
-  controlsM.appendChild(leftBtn);
-  controlsM.appendChild(span.cloneNode());
-
-  const rightBtn = document.createElement("button");
-  rightBtn.className = "col-4 py-2 m-0";
-  rightBtn.appendChild(document.createTextNode("→"));
-  controlsM.appendChild(rightBtn);
-
-  upBtn.addEventListener("touchstart", () => {
-    inputMovement.movement = 1;
-  });
-  upBtn.addEventListener("touchend", () => {
-    inputMovement.movement -= (1 + inputMovement.movement) / 2;
-  });
-
-  downBtn.addEventListener("touchstart", () => {
-    inputMovement.movement = -1;
-  });
-  downBtn.addEventListener("touchend", () => {
-    inputMovement.movement += (1 - inputMovement.movement) / 2;
-  });
-
-  leftBtn.addEventListener("touchstart", () => {
-    inputMovement.rotation = 1;
-  });
-  leftBtn.addEventListener("touchend", () => {
-    inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
-  });
-
-  rightBtn.addEventListener("touchstart", () => {
-    inputMovement.rotation = -1;
-  });
-  rightBtn.addEventListener("touchend", () => {
-    inputMovement.rotation += (1 - inputMovement.rotation) / 2;
-  });
-}
 
 function addToNavbar(text, func) {
   const btn = document.createElement("button");
@@ -469,21 +384,45 @@ const warehouse = await loadGLTF(warehousePath);
 warehouse.rotation.x = Math.PI;
 scene.add(warehouse);
 
+const serverPollingInterval = 500;
+
+const serverPath = "https://localhost:7157/Forklift/GetPosition";
+
+function serverPolling() {
+  setInterval(getPosition, serverPollingInterval);
+}
+
+serverPolling()
+
+
+function getPosition() {
+  fetch(serverPath).then(res => {
+    res.json().then(positionInformation => {
+      forkLift.position.x = positionInformation.x;
+      forkLift.position.z = positionInformation.y;
+      forkLift.rotation.y = positionInformation.rotation;
+      fork.position.y = positionInformation.forkheight;
+    });
+  });
+}
+
+const ball = new Three.Mesh(new Three.SphereGeometry(), new Three.MeshBasicMaterial());
+ball.position.x = 1;
+ball.position.y -= 2;
+forkLift.attach(ball);
+
+
 //ANIMATE;
 function animate() {
   arrow.lookAt(currentTarget.clone().multiply(new Three.Vector3(-1, 1, 1)));
   arrow.rotation.x = 0;
   arrow.rotation.z = 0;
 
+  ball.position.y += Math.sin(Date.now() / 1000);
+
   targetArrow.position.y = Math.cos(Date.now() / 400) / 2.6 - 5;
   targetArrow.position.x = currentTarget.x;
   targetArrow.position.z = currentTarget.z;
-
-  forkLift.rotation.y -= inputMovement.rotation * rotationSpeed;
-  forkLift.translateZ(-inputMovement.movement * translationSpeed);
-  if (forkCheckPosition()) {
-    fork.position.y += inputForkMovement * forkSpeed;
-  }
 
   floorCollision();
   if (!isForkliftLoaded) {
@@ -1371,63 +1310,8 @@ window.addEventListener("resize", onResize);
 
 window.addEventListener("keydown", (event) => {
   switch (event.code) {
-    case "KeyA": {
-      inputMovement.rotation = 1;
-      break;
-    }
-    case "KeyD": {
-      inputMovement.rotation = -1;
-      break;
-    }
-    case "KeyW": {
-      inputMovement.movement = 1;
-      break;
-    }
-    case "KeyS": {
-      inputMovement.movement = -1;
-      break;
-    }
-
     case "KeyC": {
       changeCamera();
-      break;
-    }
-    case "ArrowUp": {
-      inputForkMovement = +1;
-
-      break;
-    }
-    case "ArrowDown": {
-      inputForkMovement = -1;
-      break;
-    }
-  }
-});
-
-window.addEventListener("keyup", (event) => {
-  switch (event.code) {
-    case "KeyA": {
-      inputMovement.rotation -= (1 + inputMovement.rotation) / 2;
-      break;
-    }
-    case "KeyD": {
-      inputMovement.rotation += (1 - inputMovement.rotation) / 2;
-      break;
-    }
-    case "KeyW": {
-      inputMovement.movement -= (1 + inputMovement.movement) / 2;
-      break;
-    }
-    case "KeyS": {
-      inputMovement.movement += (1 - inputMovement.movement) / 2;
-      break;
-    }
-    case "ArrowUp": {
-      inputForkMovement -= (1 + inputForkMovement) / 2;
-      break;
-    }
-    case "ArrowDown": {
-      inputForkMovement += (1 - inputForkMovement) / 2;
       break;
     }
   }
