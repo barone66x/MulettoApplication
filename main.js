@@ -91,19 +91,9 @@ let currentBobinaOffsetY;
 
 //#region Camere e Control
 
-const forkLiftCamera = new Three.PerspectiveCamera(
-  90,
-  res.width / res.height,
-  0.1,
-  5000 / worldScale
-);
+const forkLiftCamera = new Three.PerspectiveCamera(90, res.width / res.height, 0.1, 5000 / worldScale);
 
-const skyCamera = new Three.PerspectiveCamera(
-  70,
-  res.width / res.height,
-  0.1,
-  5000 / worldScale
-);
+const skyCamera = new Three.PerspectiveCamera(70, res.width / res.height, 0.1, 5000 / worldScale);
 
 forkLiftCamera.position.z = 2;
 forkLiftCamera.position.y = 3;
@@ -113,12 +103,7 @@ skyCamera.lookAt(new Three.Vector3(0, 0, 0));
 skyCamera.position.x = 0;
 skyCamera.position.z = 0;
 
-const sideCamera = new Three.PerspectiveCamera(
-  70,
-  res.width / res.height,
-  0.1,
-  5000 / worldScale
-);
+const sideCamera = new Three.PerspectiveCamera(70, res.width / res.height, 0.1, 5000 / worldScale);
 
 sideCamera.position.x = -25;
 sideCamera.position.z = 0;
@@ -141,8 +126,7 @@ informationDiv.className = "d-flex align-items-end flex-column";
 container.appendChild(informationDiv);
 
 const informationRows = document.createElement("div");
-informationRows.className =
-  "d-flex align-items-start flex-column bg-dark rounded-1 bg-opacity-75";
+informationRows.className = "d-flex align-items-start flex-column bg-dark rounded-1 bg-opacity-75";
 informationDiv.appendChild(informationRows);
 
 document.body.appendChild(container);
@@ -224,10 +208,7 @@ texture.wrapS = Three.RepeatWrapping;
 texture.wrapT = Three.RepeatWrapping;
 texture.repeat.set(textureRep, textureRep);
 
-const plane = new Three.Mesh(
-  new Three.PlaneGeometry(825, 300),
-  new Three.MeshBasicMaterial({ map: texture })
-);
+const plane = new Three.Mesh(new Three.PlaneGeometry(825, 300), new Three.MeshBasicMaterial({ map: texture }));
 plane.rotation.x = Math.PI / 2;
 scene.add(plane);
 
@@ -236,16 +217,11 @@ const forkLiftScale = 2;
 const forkLift = await loadGLTF(forkliftPath);
 
 scene.add(forkLift);
-forkLift.rotation.z = Math.PI;
+forkLift.rotation.x = Math.PI;
 forkLift.add(forkLiftCamera);
 forkLift.add(skyCamera);
 forkLift.add(sideCamera);
-const forkCollisionBoxPoints = [
-  new Point(-3, 3.7),
-  new Point(3, 3.7),
-  new Point(2, -2.3),
-  new Point(-2, -2.3),
-];
+const forkCollisionBoxPoints = [new Point(-3, 3.7), new Point(3, 3.7), new Point(2, -2.3), new Point(-2, -2.3)];
 let fork = forkLift.getObjectByName("Fork");
 // fork = forkLift.children.find((x) => x.name = "Fork");
 
@@ -335,8 +311,6 @@ const defaultRackModel = await loadGLTF(rackPath);
 
 //#endregion
 
-
-
 // #endregion
 
 //inizialmente disabilito il bottone del carica/scarica bobina
@@ -388,37 +362,65 @@ const serverPollingInterval = 500;
 
 const serverPath = "https://localhost:7157/Forklift/GetPosition";
 
-function serverPolling() {
-  setInterval(getPosition, serverPollingInterval);
-}
+const oldPosition = {
+  x: 0,
+  y: 0,
+  rotation: 0,
+  forkHeight: 0,
+};
 
-serverPolling()
+const speed = {
+  x: 0,
+  y: 0,
+  rotation: 0,
+  forkHeight: 0,
+};
 
+let oldTime = Date.now();
 
 function getPosition() {
-  fetch(serverPath).then(res => {
-    res.json().then(positionInformation => {
-      forkLift.position.x = positionInformation.x;
-      forkLift.position.z = positionInformation.y;
-      forkLift.rotation.y = positionInformation.rotation;
-      fork.position.y = positionInformation.forkheight;
+  fetch(serverPath).then((res) => {
+    res.json().then((positionInformation) => {
+      positionInformation.rotation = -Three.MathUtils.degToRad(positionInformation.rotation);
+      //se qualcosa dovesse andare storto, alla fine della chiamata si teletrasporterà comunque nel punto corretto
+      forkLift.position.x = oldPosition.x;
+      forkLift.position.z = oldPosition.y;
+      forkLift.rotation.y = oldPosition.rotation;
+      fork.position.y = oldPosition.forkHeight;
+
+      speed.x = (positionInformation.x - oldPosition.x) / serverPollingInterval;
+      speed.y = (positionInformation.y - oldPosition.y) / serverPollingInterval;
+      speed.rotation = (positionInformation.rotation - oldPosition.rotation) / serverPollingInterval;
+      speed.forkHeight = (positionInformation.forkHeight - oldPosition.forkHeight) / serverPollingInterval;
+
+      oldPosition.x = positionInformation.x;
+      oldPosition.y = positionInformation.y;
+      oldPosition.rotation = positionInformation.rotation;
+      oldPosition.forkHeight = positionInformation.forkHeight;
     });
   });
 }
 
-const ball = new Three.Mesh(new Three.SphereGeometry(), new Three.MeshBasicMaterial());
-ball.position.x = 1;
-ball.position.y -= 2;
-forkLift.attach(ball);
+function serverPolling() {
+  setInterval(getPosition, serverPollingInterval);
+}
 
+serverPolling();
 
 //ANIMATE;
 function animate() {
+  let newTime = Date.now();
+
+  forkLift.position.x += speed.x * (newTime - oldTime);
+  forkLift.position.z += speed.y * (newTime - oldTime);
+  forkLift.rotation.y += speed.rotation * (newTime - oldTime);
+  fork.position.y += speed.forkHeight * (newTime - oldTime);
+
+  oldTime = newTime;
+
   arrow.lookAt(currentTarget.clone().multiply(new Three.Vector3(-1, 1, 1)));
   arrow.rotation.x = 0;
   arrow.rotation.z = 0;
-
-  ball.position.y += Math.sin(Date.now() / 1000);
 
   targetArrow.position.y = Math.cos(Date.now() / 400) / 2.6 - 5;
   targetArrow.position.x = currentTarget.x;
@@ -463,11 +465,7 @@ function generateFloorsOld() {
 
     floor.rotation.y = Three.MathUtils.degToRad(f.rotation);
 
-    let newCenter = rotateOnAxis(
-      f.position,
-      new Point(floor.position.x, floor.position.z),
-      f.rotation
-    );
+    let newCenter = rotateOnAxis(f.position, new Point(floor.position.x, floor.position.z), f.rotation);
     floor.name = f.id;
     floor.position.x = newCenter.x;
     floor.position.z = newCenter.y;
@@ -487,9 +485,6 @@ function generateFloors() {
   texture.wrapT = Three.RepeatWrapping;
   texture.repeat.set(0.3, 0.3);
 
-
-  
-
   floors.forEach((floor) => {
     let floorShape = new Three.Shape();
     floorShape.moveTo(floor.point1.x, floor.point1.y);
@@ -498,10 +493,7 @@ function generateFloors() {
     floorShape.lineTo(floor.point4.x, floor.point4.y);
     floorShape.lineTo(floor.point1.x, floor.point1.y);
     const floorGeometry = new Three.ShapeGeometry(floorShape);
-    let newFloor = new Three.Mesh(
-      floorGeometry,
-      new Three.MeshPhongMaterial({ side: Three.DoubleSide, map: texture })
-    );
+    let newFloor = new Three.Mesh(floorGeometry, new Three.MeshPhongMaterial({ side: Three.DoubleSide, map: texture }));
     newFloor.position.y = -0.05;
     // console.log(floorShape);
     scene.add(newFloor);
@@ -521,11 +513,7 @@ async function generateBobine() {
     bobina.scale.set(f.base * 2, f.depth * 2, f.height * 2);
     if (!f.isStanding) {
       bobina.rotation.z = -Math.PI / 2;
-      newCenter = rotateOnAxis(
-        f.position,
-        new Point(f.position.x, f.position.y),
-        f.rotation
-      );
+      newCenter = rotateOnAxis(f.position, new Point(f.position.x, f.position.y), f.rotation);
     }
     bobina.position.x = newCenter.x;
     bobina.position.z = newCenter.y;
@@ -578,26 +566,10 @@ function rotateOnAxis(rotationAxis, point, rotationAngle) {
 function generateFloorPolygonOld(center, floor) {
   // const polygon = new dc.Polygon(new Point(floorPosition.x, floorPosition.z))
   const polygon = new dc.Polygon(center, [
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(-(floor.size.x / 2), floor.size.y / 2),
-      floor.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(floor.size.x / 2, floor.size.y / 2),
-      floor.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(floor.size.x / 2, -(floor.size.y / 2)),
-      floor.rotation
-    ),
-    rotateOnAxis(
-      new Point(0, 0),
-      new Point(-(floor.size.x / 2), -(floor.size.y / 2)),
-      floor.rotation
-    ),
+    rotateOnAxis(new Point(0, 0), new Point(-(floor.size.x / 2), floor.size.y / 2), floor.rotation),
+    rotateOnAxis(new Point(0, 0), new Point(floor.size.x / 2, floor.size.y / 2), floor.rotation),
+    rotateOnAxis(new Point(0, 0), new Point(floor.size.x / 2, -(floor.size.y / 2)), floor.rotation),
+    rotateOnAxis(new Point(0, 0), new Point(-(floor.size.x / 2), -(floor.size.y / 2)), floor.rotation),
   ]);
   polygon.name = floor.id;
   floorPolygons.push(polygon);
@@ -610,22 +582,10 @@ function generateFloorPolygonOld(center, floor) {
 function generateFloorPolygon(floorJson) {
   const fakeCenter = new Point(floorJson.point1.x, floorJson.point1.y);
   const polygon = new dc.Polygon(fakeCenter, [
-    new Point(
-      floorJson.point1.x - fakeCenter.x,
-      floorJson.point1.y - fakeCenter.y
-    ),
-    new Point(
-      floorJson.point2.x - fakeCenter.x,
-      floorJson.point2.y - fakeCenter.y
-    ),
-    new Point(
-      floorJson.point3.x - fakeCenter.x,
-      floorJson.point3.y - fakeCenter.y
-    ),
-    new Point(
-      floorJson.point4.x - fakeCenter.x,
-      floorJson.point4.y - fakeCenter.y
-    ),
+    new Point(floorJson.point1.x - fakeCenter.x, floorJson.point1.y - fakeCenter.y),
+    new Point(floorJson.point2.x - fakeCenter.x, floorJson.point2.y - fakeCenter.y),
+    new Point(floorJson.point3.x - fakeCenter.x, floorJson.point3.y - fakeCenter.y),
+    new Point(floorJson.point4.x - fakeCenter.x, floorJson.point4.y - fakeCenter.y),
   ]);
   polygon.name = floorJson.id;
 
@@ -659,21 +619,9 @@ function generateBobinaPolygon(center, bobina) {
   } else {
     polygon = new dc.Polygon(center, [
       rotateOnAxis(new Point(0, 0), new Point(0, bobina.base), bobina.rotation),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(0, -bobina.base),
-        bobina.rotation
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(bobina.depth * 2, bobina.base),
-        bobina.rotation
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(bobina.depth * 2, -bobina.base),
-        bobina.rotation
-      ),
+      rotateOnAxis(new Point(0, 0), new Point(0, -bobina.base), bobina.rotation),
+      rotateOnAxis(new Point(0, 0), new Point(bobina.depth * 2, bobina.base), bobina.rotation),
+      rotateOnAxis(new Point(0, 0), new Point(bobina.depth * 2, -bobina.base), bobina.rotation),
     ]);
   }
 
@@ -693,43 +641,28 @@ function generateBobinaPolygon(center, bobina) {
 }
 
 function removePolygon() {
-  let forkArea = new dc.Polygon(
-    new Point(forkLift.position.x, forkLift.position.z),
-    [
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[0].x * forkLiftScale,
-          -forkCollisionBoxPoints[0].y * forkLiftScale
-        ),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[1].x * forkLiftScale,
-          -forkCollisionBoxPoints[1].y * forkLiftScale
-        ),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[2].x * forkLiftScale,
-          -forkCollisionBoxPoints[2].y * forkLiftScale
-        ),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(
-          forkCollisionBoxPoints[3].x * forkLiftScale,
-          -forkCollisionBoxPoints[3].y * forkLiftScale
-        ),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-    ]
-  );
+  let forkArea = new dc.Polygon(new Point(forkLift.position.x, forkLift.position.z), [
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[0].x * forkLiftScale, -forkCollisionBoxPoints[0].y * forkLiftScale),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[1].x * forkLiftScale, -forkCollisionBoxPoints[1].y * forkLiftScale),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[2].x * forkLiftScale, -forkCollisionBoxPoints[2].y * forkLiftScale),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[3].x * forkLiftScale, -forkCollisionBoxPoints[3].y * forkLiftScale),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+  ]);
 
   bobinaPolygons.forEach((x) => {
     if (dc.polygonInPolygon(x, forkArea)) {
@@ -741,17 +674,14 @@ function removePolygon() {
 function floorCollision() {
   let trovato = false;
   floorPolygons.forEach((area) => {
-    if (
-      pointInPolygon(new Point(forkLift.position.x, forkLift.position.z), area)
-    ) {
+    if (pointInPolygon(new Point(forkLift.position.x, forkLift.position.z), area)) {
       currentArea = floors.find((x) => x.id == area.name);
       trovato = true;
     }
   });
 
   if (trovato == true) {
-    floorLabel.innerHTML =
-      "floor id: " + currentArea.id + "<br> floor name: " + currentArea.name;
+    floorLabel.innerHTML = "floor id: " + currentArea.id + "<br> floor name: " + currentArea.name;
   } else {
     currentArea = "";
     floorLabel.innerHTML = "";
@@ -778,9 +708,7 @@ function bobinaCollision() {
   bobinaPolygons.forEach((bobina) => {
     if (isInArea(bobina)) {
       const collidedBobinaJson = bobine.find((x) => x.id == bobina.name);
-      const collidedBobinaModel = scene.children.find(
-        (figlio) => figlio.name == bobina.name && figlio.tipo == "bobina"
-      );
+      const collidedBobinaModel = scene.children.find((figlio) => figlio.name == bobina.name && figlio.tipo == "bobina");
 
       if (checkHeight(collidedBobinaJson, collidedBobinaModel)) {
         trovato = true;
@@ -811,14 +739,7 @@ function changeBobinaLabel() {
   let res = "";
   let br = floorLabel.innerHTML == "" ? "" : "<br>";
   currentBobinaJsons.forEach((json) => {
-    res +=
-      br +
-      "bobina id: " +
-      json.id +
-      "<br> bobina depth: " +
-      json.depth +
-      "<br>bobina diameter: " +
-      json.base;
+    res += br + "bobina id: " + json.id + "<br> bobina depth: " + json.depth + "<br>bobina diameter: " + json.base;
     br = "<br><br>";
   });
   bobinaLabel.innerHTML = res;
@@ -959,8 +880,7 @@ function showMissionsForm() {
   div.style.background = "rgb(233,233,233)";
   cancelBtn.innerHTML = "Cancella";
   sendBtn.innerHTML = "Invia";
-  div.className =
-    "position-absolute top-50 start-50 translate-middle p-3 rounded-1 row w-50";
+  div.className = "position-absolute top-50 start-50 translate-middle p-3 rounded-1 row w-50";
 
   missionDiv.appendChild(missionsList);
   div.appendChild(missionDiv);
@@ -971,12 +891,8 @@ function showMissionsForm() {
 
   sendBtn.addEventListener("click", async () => {
     navbar.style.visibility = "visible";
-    currentMission = missions.find(
-      (x) => x.id == missionsList.options[missionsList.selectedIndex].value
-    );
-    currentTarget = scene.children.find(
-      (x) => x.name == currentMission.bobine[0] && x.tipo == "bobina"
-    ).position;
+    currentMission = missions.find((x) => x.id == missionsList.options[missionsList.selectedIndex].value);
+    currentTarget = scene.children.find((x) => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
     arrow.visible = true;
     abortlMissionBtn.disabled = false;
     targetArrow.visible = true;
@@ -1012,8 +928,7 @@ function showPopup(messaggio) {
   div.appendChild(row);
 
   sendBtn.className = "col-4";
-  div.className =
-    "position-absolute top-50 start-50 translate-middle p-3 rounded-1";
+  div.className = "position-absolute top-50 start-50 translate-middle p-3 rounded-1";
 
   row.appendChild(sendBtn);
 
@@ -1041,8 +956,7 @@ function showForm() {
   div.style.background = "rgb(233,233,233)";
   cancelBtn.innerHTML = "Cancella";
   sendBtn.innerHTML = "Invia";
-  div.className =
-    "position-absolute top-50 start-50 translate-middle p-3 rounded-1";
+  div.className = "position-absolute top-50 start-50 translate-middle p-3 rounded-1";
   textArea.type = "text";
   div.appendChild(textArea);
   div.appendChild(sendBtn);
@@ -1101,31 +1015,28 @@ function isInArea(area) {
 
   fakeCenter = new Point(fakeCenter.x, fakeCenter.z);
 
-  let forkArea = new dc.Polygon(
-    new Point(forkLift.position.x, forkLift.position.z),
-    [
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(forkCollisionBoxPoints[0].x, -forkCollisionBoxPoints[0].y),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(forkCollisionBoxPoints[1].x, -forkCollisionBoxPoints[1].y),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(forkCollisionBoxPoints[2].x, -forkCollisionBoxPoints[2].y),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-      rotateOnAxis(
-        new Point(0, 0),
-        new Point(forkCollisionBoxPoints[3].x, -forkCollisionBoxPoints[3].y),
-        Three.MathUtils.radToDeg(forkLift.rotation.y)
-      ),
-    ]
-  );
+  let forkArea = new dc.Polygon(new Point(forkLift.position.x, forkLift.position.z), [
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[0].x, -forkCollisionBoxPoints[0].y),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[1].x, -forkCollisionBoxPoints[1].y),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[2].x, -forkCollisionBoxPoints[2].y),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+    rotateOnAxis(
+      new Point(0, 0),
+      new Point(forkCollisionBoxPoints[3].x, -forkCollisionBoxPoints[3].y),
+      Three.MathUtils.radToDeg(forkLift.rotation.y)
+    ),
+  ]);
 
   // forkArea.calcPoints.forEach((point) => {
   //   const helper = new Three.Mesh(
@@ -1162,8 +1073,7 @@ function unloadForklift() {
     let rotation = new Three.Vector3();
     model.getWorldDirection(rotation);
 
-    rotation =
-      Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x)) - 90;
+    rotation = Three.MathUtils.radToDeg(Math.atan2(rotation.z, rotation.x)) - 90;
 
     currentBobinaJsons[i].position = {
       x: model.position.x,
@@ -1177,10 +1087,7 @@ function unloadForklift() {
       bobine.push(currentBobinaJsons[i]);
     }
 
-    generateBobinaPolygon(
-      new Point(model.position.x, model.position.z),
-      currentBobinaJsons[i]
-    );
+    generateBobinaPolygon(new Point(model.position.x, model.position.z), currentBobinaJsons[i]);
 
     let index;
     if (
@@ -1204,9 +1111,7 @@ function unloadForklift() {
   });
 
   if (currentMission) {
-    currentTarget = scene.children.find(
-      (x) => x.name == currentMission.bobine[0] && x.tipo == "bobina"
-    ).position;
+    currentTarget = scene.children.find((x) => x.name == currentMission.bobine[0] && x.tipo == "bobina").position;
   }
 
   isForkliftLoaded = false;
@@ -1215,15 +1120,10 @@ function unloadForklift() {
 function loadForklift() {
   currentBobinaModels.forEach((model) => {
     fork.attach(model);
-    model.rotation.y =
-      model.rotation.y % (Math.PI / 2) > Math.PI / 4
-        ? Math.PI / 2
-        : -Math.PI / 2;
+    model.rotation.y = model.rotation.y % (Math.PI / 2) > Math.PI / 4 ? Math.PI / 2 : -Math.PI / 2;
     model.position.x = 0;
     removePolygon();
 
-
-    
     // model.copy(defaultBobinaModel);
     let indice = 0;
     while (indice < model.children.length) {
@@ -1235,9 +1135,8 @@ function loadForklift() {
 
     if (currentMission) {
       if (currentMission.bobine.find((x) => x == model.name)) {
-        currentTarget = scene.children.find(
-          (x) => x.name == currentMission.destinationArea && x.tipo == "floor"
-        ).geometry.boundingSphere.center;
+        currentTarget = scene.children.find((x) => x.name == currentMission.destinationArea && x.tipo == "floor").geometry
+          .boundingSphere.center;
         currentTarget = new Three.Vector3(currentTarget.x, 0, currentTarget.y);
       }
     }
@@ -1257,11 +1156,7 @@ async function spawnBobina(id) {
   model.name = bobina.id;
   model.tipo = "bobina";
 
-  model.scale.set(
-    bobina.base / forkLiftScale,
-    bobina.depth / forkLiftScale,
-    bobina.height / forkLiftScale
-  );
+  model.scale.set(bobina.base / forkLiftScale, bobina.depth / forkLiftScale, bobina.height / forkLiftScale);
 
   model.rotation.z = Math.PI / 2;
   model.rotation.y = -Math.PI / 2;
@@ -1270,9 +1165,7 @@ async function spawnBobina(id) {
   currentBobinaOffsetY = -2;
 
   model.position.x = currentBobinaOffsetX / (forkLiftScale * worldScale);
-  model.position.y =
-    -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) /
-    (worldScale * forkLiftScale);
+  model.position.y = -(-forkLift.position.y - bobina.base / forkLiftScale / 2 / 0.625) / (worldScale * forkLiftScale);
   model.position.z = currentBobinaOffsetY / (worldScale * forkLiftScale);
 
   forkLift.add(model);
@@ -1294,10 +1187,7 @@ async function spawnBobina(id) {
 }
 
 function forkCheckPosition() {
-  if (
-    (fork.position.y <= 0 && inputForkMovement < 0) ||
-    (fork.position.y > 8.5 && inputForkMovement > 0)
-  ) {
+  if ((fork.position.y <= 0 && inputForkMovement < 0) || (fork.position.y > 8.5 && inputForkMovement > 0)) {
     return false;
   }
   return true;
